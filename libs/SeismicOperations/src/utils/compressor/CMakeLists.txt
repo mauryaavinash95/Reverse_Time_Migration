@@ -54,4 +54,4 @@ add_library(
         STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Compressor.cpp
 )
-target_link_libraries(FILE-COMPRESSION ${COMPRESS_LIBS})
+target_link_libraries(FILE-COMPRESSION ${COMPRESS_LIBS} nvcomp::nvcomp CUDA::cudart)

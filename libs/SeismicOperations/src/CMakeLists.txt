@@ -33,4 +33,4 @@ set(OPERATIONS-LIBS
         )
 
 add_library(SEISMIC-OPERATIONS STATIC ${OPERATIONS-SOURCES})
-target_link_libraries(SEISMIC-OPERATIONS ${OPERATIONS-LIBS})
+target_link_libraries(SEISMIC-OPERATIONS ${OPERATIONS-LIBS} nvcomp::nvcomp CUDA::cudart CUSZ::cusz)

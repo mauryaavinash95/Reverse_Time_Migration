@@ -165,7 +165,8 @@ ComponentsGenerator::GenerateForwardCollector(const string &write_path) {
 
     map->WriteValue(OP_K_PROPRIETIES, OP_K_WRITE_PATH, write_path);
     ForwardCollector *forward_collector = nullptr;
-
+    
+    logger->Info() << "In generate forward Collector..." << type << "\n";
     if (type == "two") {
         logger->Info() << "Generating Two Propagation Forward Collector...\n";
         forward_collector = new TwoPropagation(map);

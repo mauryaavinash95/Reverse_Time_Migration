@@ -20,6 +20,7 @@
 #include <cmath>
 #include <unordered_set>
 #include <algorithm>
+#include <bs/base/logger/concrete/LoggerSystem.hpp>
 
 #include <bs/base/memory/MemoryManager.hpp>
 
@@ -31,6 +32,7 @@ using namespace bs::io::dataunits;
 using namespace operations::utils::io;
 using namespace operations::dataunits;
 using namespace operations::common;
+using namespace bs::base::logger;
 
 
 Gather *operations::utils::io::CombineGather(std::vector<Gather *> &aGatherVector) {
@@ -223,6 +225,8 @@ void operations::utils::io::ParseGatherToTraces(
     /// We dont have total time , but we have the nt from the
     /// segy file , so we can modify the nt according to the
     /// ratio between the recorded dt and the suitable dt
+    LoggerSystem *Logger = LoggerSystem::GetInstance(); 
+	Logger->Info() << "sample nt: " << sample_nt << " sample dt " << apTraces->SampleDT << " get dt " << apGridBox->GetDT()  << '\n';
     apGridBox->SetNT(int(sample_nt * apTraces->SampleDT / apGridBox->GetDT()));
 
     *total_time = sample_nt * apTraces->SampleDT;

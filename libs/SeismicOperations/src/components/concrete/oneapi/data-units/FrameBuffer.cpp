@@ -18,12 +18,13 @@
  */
 
 #include <bs/base/api/cpp/BSBase.hpp>
-
+#include <bs/timer/api/cpp/BSTimer.hpp>
 #include <operations/common/DataTypes.h>
 #include <operations/data-units/concrete/holders/FrameBuffer.hpp>
 
 using namespace bs::base::backend;
 using namespace operations::dataunits;
+using namespace bs::timer;
 
 template
 class operations::dataunits::FrameBuffer<float>;
@@ -161,8 +162,11 @@ T *FrameBuffer<T>::GetHostPointer() {
         if (mpHostDataPointer == nullptr) {
             mpHostDataPointer = (T *) malloc_host(mAllocatedBytes, ctxt);
         }
+        {
+        ScopeTimer timer("GetHostPointer::FrameBuffer.cpp");
         Device::MemCpy(mpHostDataPointer, mpDataPointer, mAllocatedBytes,
                        Device::COPY_DEVICE_TO_HOST);
+        }
     }
     return mpHostDataPointer;
 }

@@ -54,11 +54,25 @@ elseif (${USE_OMP})
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fopenmp -ftree-vectorize -O3 -fopt-info-vec-optimized ")
     endif ()
 elseif (${USE_DPC})
-    set(CMAKE_C_COMPILER gcc)
-    set(CMAKE_CXX_COMPILER dpcpp)
-    set(CMAKE_CXX_FLAGS_DEBUG "-O3 -fsycl -std=c++17 -g")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fsycl -std=c++17")
-    set(CMAKE_CXX_FLAGS " -O3 -fsycl -std=c++17")
+	#    set(CMAKE_C_COMPILER gcc)
+	#    set(CMAKE_CXX_COMPILER dpcpp)
+	#    set(CMAKE_CXX_FLAGS_DEBUG "-O3 -fsycl -std=c++17 -g")
+	#    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fsycl -std=c++17")
+	#    set(CMAKE_CXX_FLAGS " -O3 -fsycl -std=c++17")
+	#    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lOpenCL -lsycl")
+	set(CMAKE_C_COMPILER clang++)
+    set(CMAKE_CXX_COMPILER clang++)
+    OPTION(BUILD_FOR_NVIDIA " Build for Nvidia GPU's " ON)
+    if(BUILD_FOR_NVIDIA)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl-unnamed-lambda -fsycl -fsycl-targets=nvptx64-nvidia-cuda -O2 -std=c++17")
+        # find_package(CUDAToolkit REQUIRED)
+        # list(APPEND CMAKE_PREFIX_PATH "/home/am6429/nvcomp/")
+        # find_package(nvcomp REQUIRED 2.3)
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsycl -O2 -std=c++17")
+    endif()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g" )
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS}" )
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lOpenCL -lsycl")
 elseif (${USE_OMP_OFFLOAD})
     set(CMAKE_C_COMPILER gcc)
@@ -108,7 +122,7 @@ add_definitions(
 ##############################################################################
 
 # Project name and language
-project(Seismic-Toolbox LANGUAGES CXX VERSION 2.2.1)
+project(Seismic-Toolbox LANGUAGES CXX CUDA VERSION 2.2.1)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -135,11 +149,20 @@ else ()
     message(STATUS "No OpenCV used")
 endif ()
 
-find_package(spdlog)
-if (spdlog_FOUND)
-    message(STATUS "spdlog library is found")
-    add_definitions(-DUSING_SPDLOG)
-endif ()
+# find_package(spdlog)
+# if (spdlog_FOUND)
+#     message(STATUS "spdlog library is found")
+#     add_definitions(-DUSING_SPDLOG)
+# endif ()
+
+# if (BUILD_FOR_NVIDIA)
+find_package(CUDAToolkit REQUIRED)
+list(APPEND CMAKE_PREFIX_PATH "/home/am6429/nvcomp/")
+find_package(nvcomp REQUIRED 2.3)
+list(APPEND CMAKE_PREFIX_PATH "/home/am6429/cusz-build/")
+find_package(CUSZ REQUIRED)
+add_definitions(-w)
+# endif()
 
 ##############################################################################
 # HEADERS INCLUDE
@@ -180,10 +203,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 ##############################################################################
 
 add_executable(Engine ${CMAKE_CURRENT_SOURCE_DIR}/main_migration.cpp)
-target_link_libraries(Engine SEISMIC-TOOLBOX SEISMIC-OPERATIONS)
+target_link_libraries(Engine SEISMIC-TOOLBOX SEISMIC-OPERATIONS nvcomp::nvcomp CUDA::cudart)
 
 add_executable(Modeller ${CMAKE_CURRENT_SOURCE_DIR}/main_modelling.cpp)
-target_link_libraries(Modeller SEISMIC-TOOLBOX SEISMIC-OPERATIONS)
+target_link_libraries(Modeller SEISMIC-TOOLBOX SEISMIC-OPERATIONS nvcomp::nvcomp CUDA::cudart)
 
 ##############################################################################
 # EXAMPLES

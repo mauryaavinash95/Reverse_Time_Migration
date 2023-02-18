@@ -32,7 +32,7 @@
       }
     },
     "forward-collector": {
-      "type": "three",
+      "type": "two",
       "properties": {
         "boundary-saving": true
       }

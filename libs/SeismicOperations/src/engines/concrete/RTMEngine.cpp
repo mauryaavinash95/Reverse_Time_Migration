@@ -283,6 +283,7 @@ RTMEngine::Forward(GridBox *apGridBox) {
             components::KERNEL_MODE::FORWARD);
     int time_steps = this->mpConfiguration->GetSourceInjector()->GetPrePropagationNT();
     // Do prequel source injection before main forward propagation.
+    logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << " timesteps " << time_steps << '\n';
     for (int it = -time_steps; it < 1; it++) {
         {
             ScopeTimer timer("SourceInjector::ApplySource");
@@ -297,6 +298,7 @@ RTMEngine::Forward(GridBox *apGridBox) {
 #endif
     }
     uint one_percent = apGridBox->GetNT() / 100 + 1;
+    logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
     for (int it = 1; it < apGridBox->GetNT(); it++) {
         {
             ScopeTimer timer("ForwardCollector::SaveForward");

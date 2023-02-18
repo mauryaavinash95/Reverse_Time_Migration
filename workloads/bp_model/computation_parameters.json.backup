@@ -1,19 +1,19 @@
 {
   "computation-parameters": {
-    "stencil-order": 16,
+    "stencil-order": 8,
     "boundary-length": 20,
-    "source-frequency": 8,
+    "source-frequency": 10,
     "isotropic-radius": 5,
-    "dt-relax": 0.45,
-    "algorithm": "gpu",
-    "device": "nvidia",
+    "dt-relax": 0.9,
+    "algorithm": "cpu",
+    "device": "none",
     "cache-blocking": {
-      "block-x": 64,
-      "block-z": 4,
+      "block-x": 5500,
+      "block-z": 55,
       "block-y": 1
     },
     "window": {
-      "enable": false,
+      "enable": true,
       "left": 1300,
       "right": 600,
       "depth": 0,
@@ -22,4 +22,3 @@
     }
   }
 }
-

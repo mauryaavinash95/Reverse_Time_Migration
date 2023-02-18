@@ -290,6 +290,7 @@ void ModellingEngine::Forward(GridBox *apGridBox, uint shot_id) {
             components::KERNEL_MODE::FORWARD);
     int timesteps = this->mpConfiguration->GetSourceInjector()->GetPrePropagationNT();
     // Do prequel source injection before main forward propagation.
+    logger->Info() << " ... modelling engine num time_steps is " << timesteps << '\n';
     for (int it = -timesteps; it < 1; it++) {
         {
             ScopeTimer timer("SourceInjector::ApplySource");
@@ -305,6 +306,7 @@ void ModellingEngine::Forward(GridBox *apGridBox, uint shot_id) {
 #endif
     }
     uint onePercent = apGridBox->GetNT() / 100 + 1;
+    logger->Info() << " ... modelling engine apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
     for (uint t = 1; t < apGridBox->GetNT(); t++) {
         {
             ScopeTimer timer("SourceInjector::ApplySource");

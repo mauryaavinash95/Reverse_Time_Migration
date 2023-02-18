@@ -33,6 +33,20 @@
 #include <operations/components/independents/primitive/ForwardCollector.hpp>
 #include <operations/components/dependency/concrete/HasDependents.hpp>
 
+// #ifdef BUILD_FOR_NVIDIA
+#include "nvcomp/lz4.hpp"
+#include "nvcomp.hpp"
+#include "nvcomp/nvcompManagerFactory.hpp"
+#include "cusz.h"
+#define checkCuda(ans) { checkCudaFunc((ans), __FILE__, __LINE__); }
+inline void checkCudaFunc(cudaError_t code, const char *file, int line, bool abort=true) {
+   if (code != cudaSuccess) {
+      fprintf(stderr,"========= GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
+// #endif
 
 namespace operations {
     namespace components {
@@ -60,6 +74,10 @@ namespace operations {
             dataunits::GridBox *GetForwardGrid() override;
 
             void AcquireConfiguration() override;
+            // #ifdef BUILD_FOR_NVIDIA
+            cudaStream_t stream;
+            // #endif
+
 
         private:
             common::ComputationParameters *mpParameters = nullptr;
@@ -101,6 +119,9 @@ namespace operations {
             bool mZFP_IsRelative;
 
             float mZFP_Tolerance;
+
+            // vector<uint64_t> cmpr_times;
+            // vector<size_t> cmpr_sizes;
         };
     }//namespace components
 }//namespace operations

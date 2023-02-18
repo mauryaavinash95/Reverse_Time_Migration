@@ -18,7 +18,7 @@
  */
 
 #include <bs/base/api/cpp/BSBase.hpp>
-
+#include <bs/base/logger/concrete/LoggerSystem.hpp>
 #include <operations/components/independents/concrete/forward-collectors/ReversePropagation.hpp>
 #include <operations/configurations/MapKeys.h>
 #include <operations/components/independents/concrete/forward-collectors/boundary-saver/BoundarySaver.h>
@@ -127,7 +127,8 @@ void ReversePropagation::ResetGrid(bool is_forward_run) {
 }
 
 void ReversePropagation::SaveForward() {
-
+    LoggerSystem *Logger = LoggerSystem::GetInstance();
+    // Logger->Info() << "In reverseprop saveforward " << this->mInjectionEnabled << "\n";
     if (this->mInjectionEnabled) {
         for (auto boundary_saver : this->mBoundarySavers) {
             boundary_saver->SaveBoundaries(this->mTimeStep);
