@@ -21,12 +21,15 @@
 #include <omp.h>
 
 #include <bs/base/exceptions/Exceptions.hpp>
-
+#include <bs/base/logger/concrete/LoggerSystem.hpp>
+#include <bs/base/logger/concrete/FileLogger.hpp>
+#include <bs/base/logger/concrete/ConsoleLogger.hpp>
 
 #include <operations/common/DataTypes.h>
 #include <operations/data-units/concrete/holders/FrameBuffer.hpp>
 #include <operations/utils/checks/Checks.hpp>
 
+using namespace bs::base::logger;
 using namespace bs::base::exceptions;
 using namespace operations::dataunits;
 using namespace operations::utils::checks;
@@ -143,7 +146,8 @@ void FrameBuffer<T>::Allocate(uint aSize, const std::string &aName) {
     if (is_device_not_exist()) {
         throw DEVICE_NOT_FOUND_EXCEPTION();
     }
-
+    // LoggerSystem *Logger = LoggerSystem::GetInstance();
+    // Logger->Info() << "OMP target allocating " << mAllocatedBytes << " on device number " << device_num << "\n";
     mpDataPointer = (T *) omp_target_alloc(mAllocatedBytes, device_num);
     if (no_space_exist(mpDataPointer)) {
         throw DEVICE_NO_SPACE_EXCEPTION();

@@ -34,10 +34,13 @@
 #include <operations/components/dependency/concrete/HasDependents.hpp>
 
 // #ifdef BUILD_FOR_NVIDIA
+#include <fstream>
 #include "nvcomp/lz4.hpp"
 #include "nvcomp.hpp"
 #include "nvcomp/nvcompManagerFactory.hpp"
 #include "cusz.h"
+#include "cuszapi.hh"
+
 #define checkCuda(ans) { checkCudaFunc((ans), __FILE__, __LINE__); }
 inline void checkCudaFunc(cudaError_t code, const char *file, int line, bool abort=true) {
    if (code != cudaSuccess) {
@@ -122,6 +125,20 @@ namespace operations {
 
             // vector<uint64_t> cmpr_times;
             // vector<size_t> cmpr_sizes;
+
+            std::vector<uint64_t> func_start_times;
+            std::vector<uint64_t> func_end_times;
+            std::vector<uint64_t> nvcomp_times;
+            std::vector<uint64_t> nvcomp_sizes;
+            std::vector<uint64_t> data_sizes;
+
+            // std::vector<uint64_t> ckpt_times;
+            // std::vector<uint64_t> func_times;
+            // std::vector<uint64_t> d2d_times;
+            // std::vector<uint64_t> d2h_times;
+            // std::vector<uint64_t> h2f_times;
+            // std::vector<uint64_t> data_sizes;
+            uint64_t prev_ckpt_time = 0;
         };
     }//namespace components
 }//namespace operations

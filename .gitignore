@@ -669,3 +669,9 @@ data/
 .idea/
 *.idxsegy
 # End of https://www.toptal.com/developers/gitignore/api/clion,intellij,eclipse,sublimetext,cmake,c++,c,cuda,codeblocks,opencv,jetbrains,python,pycharm
+
+
+simple-sycl-ap*
+*.qdrep
+*.sqlite
+*.csv

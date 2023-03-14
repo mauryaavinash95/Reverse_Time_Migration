@@ -4,12 +4,12 @@
     "boundary-length": 20,
     "source-frequency": 8,
     "isotropic-radius": 5,
-    "dt-relax": 0.45,
+    "dt-relax": 0.9,
     "algorithm": "gpu",
     "device": "nvidia",
     "cache-blocking": {
       "block-x": 64,
-      "block-z": 4,
+      "block-z": 8,
       "block-y": 1
     },
     "window": {
