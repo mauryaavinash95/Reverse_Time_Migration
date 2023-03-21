@@ -68,42 +68,20 @@ TwoPropagation::~TwoPropagation() {
     uint64_t curr_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     std::string filename = std::string(std::to_string(curr_time) + "-logs.csv");
     logfile.open (filename);
-    uint64_t avg_func_time = 0;
-    uint64_t avg_d2d_time = 0;
-    uint64_t avg_d2h_time = 0;
-    uint64_t avg_h2f_time = 0;
-    uint64_t avg_ckpt_gen_time = 0;
-    uint64_t avg_only_func_time = 0;
     int n = data_sizes.size();
-    logfile << "Curr ckpt start, Prev ckpt start, Time diff, Datasize, NVComp time, Cmpr size, Cmpr ratio, Ckpt gen rate\n";
+    logfile << "D2H transfer intval, " << this->mMaxDeviceNT <<  "H2F trf intval, " << this->mMaxNT << "\n";
+    logfile << "Ckpt No., Curr ckpt start, Prev ckpt end, Time diff, Datasize, NVComp time, Cmpr size, Cmpr ratio, Ckpt gen rate\n";
     for(int i=1; i<n; i++) {
-        logfile << func_start_times[i] << ", " << func_start_times[i-1] << ", " 
-            << (func_start_times[i]-func_start_times[i-1]) << ", " 
+        logfile << iter_counts[i] << ", "
+            << func_start_times[i] << ", " 
+            << func_end_times[i-1] << ", " 
+            << (func_start_times[i]-func_end_times[i-1]) << ", " 
             << data_sizes[i] << ", "
-            << nvcomp_times[i] << ", " << nvcomp_sizes[i] << ", " 
+            << nvcomp_times[i] << ", " 
+            << nvcomp_sizes[i] << ", " 
             << (double)data_sizes[i]/(double)nvcomp_sizes[i] << ", "
-            << (double)data_sizes[i]/(double)(func_start_times[i]-func_start_times[i-1]) << "\n";
+            << (double)data_sizes[i]/(double)(func_start_times[i]-func_end_times[i-1]) << "\n";
     }
-    // logfile << "SaveForward Time, D2D time, D2H time, H2F time, Kernel time, Consc ckpt time, Data size, Data gen rate\n";
-    // for(int i=0; i<n; i+=this->mMaxDeviceNT) {
-    //     uint64_t only_func_time = func_times[i]-(d2d_times[i]+d2h_times[i]+h2f_times[i]);
-    //     logfile << func_times[i] << ", " << d2d_times[i] << ", "
-    //         << d2h_times[i] << ", " << h2f_times[i] << ", " 
-    //         << only_func_time << ", " << ckpt_times[i] << ", "
-    //         << data_sizes[i] << ", "
-    //         << (double)data_sizes[i]/(double)only_func_time << "\n";
-    //     avg_only_func_time += func_times[i];
-    //     avg_d2d_time += d2d_times[i];
-    //     avg_d2h_time += d2h_times[i];
-    //     avg_h2f_time += h2f_times[i];
-    //     avg_ckpt_gen_time += ckpt_times[i];
-    //     avg_only_func_time += only_func_time;
-    // }
-    // logfile << (double)avg_func_time/n << ", " << (double)avg_d2d_time/n << ", "
-    //         << (double)avg_d2h_time/n << ", " << (double)avg_h2f_time/n << ", " 
-    //         << (double)avg_only_func_time/n << ", " << avg_ckpt_gen_time << ", " 
-    //         << data_sizes[0] << ", "
-    //         << ((double)data_sizes[0]*n)/(double)avg_ckpt_gen_time << "\n";
 
     logfile.close();
 
@@ -114,9 +92,6 @@ TwoPropagation::~TwoPropagation() {
     this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z, initial_internalGridbox_curr);
     this->mpWaveFieldsMemoryHandler->FreeWaveFields(this->mpInternalGridBox);
     delete this->mpInternalGridBox;
-    // #ifdef BUILD_FOR_NVIDIA
-    // checkCuda(cudaStreamDestroy(stream));
-    // #endif
 }
 
 void TwoPropagation::AcquireConfiguration() {
@@ -336,7 +311,8 @@ void TwoPropagation::SaveForward() {
         // << " data size " << data_size << " GPU ckpt timesteps: " << this->mMaxDeviceNT << " Host ckpt timesteps: " <<  this->mMaxNT << "\n"; 
     uint64_t d2h_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     uint64_t nvcomp_start = 0, nvcomp_end = 0, cusz_start = 0 , cusz_end = 0, cmpr_size = 0;
-    if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {       
+    if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {     
+        // Logger->Info() << "Checkpointing at: " << this->mTimeCounter+1 << "\n";  
         int host_index = (this->mTimeCounter + 1) / this->mMaxDeviceNT - 1;
         uint8_t *uncompressed_data = (uint8_t *)this->mpForwardPressure->GetNativePointer();
         uint8_t* comp_buffer;
@@ -355,45 +331,9 @@ void TwoPropagation::SaveForward() {
                 nvcomp_manager.compress(uncompressed_data, comp_buffer, comp_config);
                 checkCuda(cudaStreamSynchronize(stream));
                 nvcomp_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-                
             }
             cmpr_size = nvcomp_manager.get_compressed_output_size(comp_buffer);
-
-            // checkCuda(cudaFree(comp_buffer));
-
-            // Logger->Info() << "NVCOMP Time (us) " << std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count() 
-            // << " Copy size " << data_size <<  " output size " << cmpr_size << "\n";
-
-            // size_t compressed_len;
-            // {
-            //     ScopeTimer t("CUSZ::Compress");
-            //     cusz_framework* framework = cusz_default_framework();
-            //     cusz_compressor* comp       = cusz_create(framework, FP32);
-            //     cusz_config*     config     = new cusz_config{.eb = 1e-5, .mode = Rel};
-            //     // x, y, z, w and the padding factor (slightly > 1.00)
-            //     cusz_len         uncomp_len = cusz_len{wnx*sizeof(float), wny, wnz, this->mMaxDeviceNT, 1.03}; 
-            //     cusz_len         decomp_len = uncomp_len;
-            //     // compression outputs
-            //     cusz_header header;
-            //     uint8_t*    exposed_compressed;
-            //     uint8_t*    compressed;
-                
-            //     checkCuda(cudaMalloc(&comp_buffer, data_size*1.05));
-            //     cusz::TimeRecord compress_timerecord;
-            //     // compress
-            //     cusz_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            //     cusz_compress(comp, config, uncompressed_data, uncomp_len, &exposed_compressed, 
-            //         &compressed_len, &header, (void*)&compress_timerecord, stream);
-            //     checkCuda(cudaStreamSynchronize(stream));
-            //     cusz_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            //     cusz_release(comp);
-            //     cudaFree(compressed);
-            // }
-            // Logger->Info() << "CUSZ Time (us) " << std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count() 
-            //     << " Copy size " << data_size <<  " output size " << compressed_len << "\n";
-
             checkCuda(cudaFree(comp_buffer));
-            // checkCuda(cudaFree(compressed));
             checkCuda(cudaStreamSynchronize(stream));
             checkCuda(cudaStreamDestroy(stream));
         }
@@ -409,6 +349,7 @@ void TwoPropagation::SaveForward() {
                 this->mMaxDeviceNT * window_size * sizeof(float),
                 Device::COPY_DEVICE_TO_HOST);
         }
+        // checkCuda(cudaDeviceSynchronize());
         // uint64_t curr_time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         // Logger->Info() << "In save forward function from GPU at time " << curr_time << " time counter " << this->mTimeCounter 
         //     << " maxdeviceNT " << this->mMaxDeviceNT << " transfer time (ns) " 
@@ -460,12 +401,22 @@ void TwoPropagation::SaveForward() {
     uint64_t d2d_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     uint64_t func_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    
-    func_start_times.push_back(func_start);
-    func_end_times.push_back(func_end);
-    nvcomp_times.push_back(nvcomp_end-nvcomp_start);
-    nvcomp_sizes.push_back(cmpr_size);
-    data_sizes.push_back(data_size);
+
+    // if ( ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) || ((this->mTimeCounter + 1) % this->mMaxNT == 0) ) {  
+        Logger->Info() << "Ckpt: " << this->mTimeCounter+1 
+            << " Fstart: " << func_start 
+            << " Fend: " << func_end
+            << " D2D: " << d2d_end-d2d_start 
+            << " D2H: " << d2h_end-d2h_start
+            << " H2F: " << h2f_end-h2f_start
+            << " Func: " << func_end-func_start << "\n";
+        iter_counts.push_back(this->mTimeCounter+1);
+        func_start_times.push_back(func_start);
+        func_end_times.push_back(func_end);
+        nvcomp_times.push_back(nvcomp_end-nvcomp_start);
+        nvcomp_sizes.push_back(cmpr_size);
+        data_sizes.push_back(data_size);
+    // }
 }
 
 void TwoPropagation::SetComputationParameters(ComputationParameters *apParameters) {

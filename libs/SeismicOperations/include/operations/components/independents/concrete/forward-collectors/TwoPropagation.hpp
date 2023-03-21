@@ -124,8 +124,7 @@ namespace operations {
             float mZFP_Tolerance;
 
             // vector<uint64_t> cmpr_times;
-            // vector<size_t> cmpr_sizes;
-
+            std::vector<size_t> iter_counts;
             std::vector<uint64_t> func_start_times;
             std::vector<uint64_t> func_end_times;
             std::vector<uint64_t> nvcomp_times;
