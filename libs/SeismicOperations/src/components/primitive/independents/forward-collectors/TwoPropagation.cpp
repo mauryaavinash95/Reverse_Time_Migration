@@ -173,11 +173,17 @@ void TwoPropagation::FetchForward() {
 
     float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
     // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
-    bool should_compress = 1;
-    if ((this->mTimeCounter-1) == this->mpMainGridBox->GetNT())
-        VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
+    if ((this->mTimeCounter-1) == this->mpMainGridBox->GetNT()) {
+        {
+            ScopeTimer t("VELOC::protect::back");
+            VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
+        }
+    }
     // veloc_client->restart(std::string("DPCPP_RTM"), this->mTimeCounter);
-    VELOC_Restart("DPCPP_RTM", this->mTimeCounter);
+    {
+        ScopeTimer t("VELOC::res");
+        VELOC_Restart("DPCPP_RTM", this->mTimeCounter);
+    }
     this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z, ptr);
 
     // this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z,
@@ -323,11 +329,17 @@ void TwoPropagation::SaveForward() {
     this->mTimeCounter++;
     float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
     // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
-    bool should_compress = 1;
-    if (this->mTimeCounter <= 1)
-        VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
+    if (this->mTimeCounter <= 1) {
+        {
+            ScopeTimer t("VELOC::protect::fwd");
+            VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
+        }
+    }
     // veloc_client->checkpoint(std::string("DPCPP_RTM"), this->mTimeCounter);
-    VELOC_Checkpoint("DPCPP_RTM", this->mTimeCounter);
+    {
+        ScopeTimer t("VELOC::ckpt");
+        VELOC_Checkpoint("DPCPP_RTM", this->mTimeCounter);
+    }
     // Transfer from Device memory to host memory
     // LoggerSystem *Logger = LoggerSystem::GetInstance();
     

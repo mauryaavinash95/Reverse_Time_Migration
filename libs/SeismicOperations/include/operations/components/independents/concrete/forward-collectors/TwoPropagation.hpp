@@ -38,8 +38,6 @@
 #include "nvcomp/lz4.hpp"
 #include "nvcomp.hpp"
 #include "nvcomp/nvcompManagerFactory.hpp"
-#include "cusz.h"
-#include "cuszapi.hh"
 #include "veloc.hpp"
 #include "veloc.h"
 
@@ -137,6 +135,7 @@ namespace operations {
             // std::vector<uint64_t> h2f_times;
             // std::vector<uint64_t> data_sizes;
             uint64_t prev_ckpt_time = 0;
+            bool should_compress = 0;
         };
     }//namespace components
 }//namespace operations
