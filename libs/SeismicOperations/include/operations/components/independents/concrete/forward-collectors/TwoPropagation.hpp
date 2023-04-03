@@ -35,7 +35,7 @@
 
 // #ifdef BUILD_FOR_NVIDIA
 #include <fstream>
-#include "nvcomp/lz4.hpp"
+#include "nvcomp/bitcomp.hpp"
 #include "nvcomp.hpp"
 #include "nvcomp/nvcompManagerFactory.hpp"
 #include "cusz.h"

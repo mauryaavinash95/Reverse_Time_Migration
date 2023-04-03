@@ -22,6 +22,7 @@
 #define PIPELINE_AGENTS_AGENT_HPP
 
 #include <operations/engines/interface/Engine.hpp>
+#include <bs/timer/core/timers/concrete/ScopeTimer.hpp>
 
 namespace stbx {
     namespace agents {
@@ -113,15 +114,18 @@ namespace stbx {
              * @return aMigrationData : MigrationData
              */
             operations::dataunits::MigrationData *Execute() {
-                operations::dataunits::GridBox *gb = Initialize();
-                BeforeMigration();
-                while (HasNextShot()) {
-                    mpEngine->MigrateShots(GetNextShot(), gb);
-                    AfterMigration();
+                {
+                    bs::timer::ScopeTimer t("Agent::Execute");
+                    operations::dataunits::GridBox *gb = Initialize();
+                    BeforeMigration();
+                    while (HasNextShot()) {
+                        mpEngine->MigrateShots(GetNextShot(), gb);
+                        AfterMigration();
+                    }
+                    BeforeFinalize();
+                    operations::dataunits::MigrationData *finalized_data = AfterFinalize(mpEngine->Finalize(gb));
+                    return finalized_data;
                 }
-                BeforeFinalize();
-                operations::dataunits::MigrationData *finalized_data = AfterFinalize(mpEngine->Finalize(gb));
-                return finalized_data;
             }
 
         protected:
