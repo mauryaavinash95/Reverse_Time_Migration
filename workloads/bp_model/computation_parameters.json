@@ -1,6 +1,6 @@
 {
   "computation-parameters": {
-    "stencil-order": 8,
+    "stencil-order": 4,
     "boundary-length": 20,
     "source-frequency": 2,
     "isotropic-radius": 5,

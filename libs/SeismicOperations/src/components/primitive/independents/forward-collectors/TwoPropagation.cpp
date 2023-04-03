@@ -173,7 +173,9 @@ void TwoPropagation::FetchForward() {
 
     float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
     // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
-    VELOC_Mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
+    bool should_compress = 1;
+    if ((this->mTimeCounter-1) == this->mpMainGridBox->GetNT())
+        VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
     // veloc_client->restart(std::string("DPCPP_RTM"), this->mTimeCounter);
     VELOC_Restart("DPCPP_RTM", this->mTimeCounter);
     this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z, ptr);
@@ -321,7 +323,9 @@ void TwoPropagation::SaveForward() {
     this->mTimeCounter++;
     float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
     // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
-    VELOC_Mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
+    bool should_compress = 1;
+    if (this->mTimeCounter <= 1)
+        VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
     // veloc_client->checkpoint(std::string("DPCPP_RTM"), this->mTimeCounter);
     VELOC_Checkpoint("DPCPP_RTM", this->mTimeCounter);
     // Transfer from Device memory to host memory
@@ -421,6 +425,11 @@ void TwoPropagation::SaveForward() {
                                  this->mpForwardPressure->GetNativePointer() +
                                  ((this->mTimeCounter - 1) % this->mMaxDeviceNT) * window_size);
     }
+
+    if ((this->mTimeCounter-1) == this->mpMainGridBox->GetNT()) {
+        VELOC_Mem_unprotect(0);
+    }
+
     // uint64_t d2d_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     // uint64_t func_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();

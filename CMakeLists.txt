@@ -159,8 +159,6 @@ endif ()
 find_package(CUDAToolkit REQUIRED)
 list(APPEND CMAKE_PREFIX_PATH "/home/am6429/nvcomp/")
 find_package(nvcomp REQUIRED 2.3)
-list(APPEND CMAKE_PREFIX_PATH "/home/am6429/cusz-install/")
-find_package(CUSZ REQUIRED)
 add_definitions(-w)
 
 # list(APPEND CMAKE_PREFIX_PATH "/home/am6429/research/veloc-build/lib64/")
