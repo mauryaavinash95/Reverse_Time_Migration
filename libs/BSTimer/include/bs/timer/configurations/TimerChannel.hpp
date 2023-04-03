@@ -21,7 +21,7 @@
 #define BS_TIMER_CORE_CHANNEL_HPP
 
 #include <memory>
-
+#include <string>
 #include <bs/timer/core/timers/interface/Timer.hpp>
 #include <bs/timer/data-units/ChannelStats.hpp>
 #include <bs/timer/core/snapshots/interface/Snapshot.hpp>

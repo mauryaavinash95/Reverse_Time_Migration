@@ -40,6 +40,8 @@
 #include "nvcomp/nvcompManagerFactory.hpp"
 #include "cusz.h"
 #include "cuszapi.hh"
+#include "veloc.hpp"
+#include "veloc.h"
 
 #define checkCuda(ans) { checkCudaFunc((ans), __FILE__, __LINE__); }
 inline void checkCudaFunc(cudaError_t code, const char *file, int line, bool abort=true) {
@@ -57,7 +59,7 @@ namespace operations {
         class TwoPropagation : public ForwardCollector,
                                public dependency::HasDependents {
         public:
-            explicit TwoPropagation(bs::base::configurations::ConfigurationMap *apConfigurationMap);
+            explicit TwoPropagation(bs::base::configurations::ConfigurationMap *apConfigurationMap, const std::string &velocClient);
 
             ~TwoPropagation() override;
 
@@ -77,9 +79,6 @@ namespace operations {
             dataunits::GridBox *GetForwardGrid() override;
 
             void AcquireConfiguration() override;
-            // #ifdef BUILD_FOR_NVIDIA
-            cudaStream_t stream;
-            // #endif
 
 
         private:

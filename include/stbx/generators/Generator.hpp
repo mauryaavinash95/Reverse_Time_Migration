@@ -58,7 +58,7 @@ namespace stbx {
              * @return Engine                    Engine instance
              */
             operations::engines::Engine *
-            GenerateEngine(const std::string &aWritePath);
+            GenerateEngine(const std::string &aWritePath, const std::string &velocConfig);
 
             /**
              * @brief Extracts algorithm from system configurations file
@@ -66,7 +66,7 @@ namespace stbx {
              * @return EngineConfiguration       EngineConfiguration instance
              */
             operations::configurations::EngineConfigurations *
-            GenerateEngineConfiguration(const std::string &aWritePath);
+            GenerateEngineConfiguration(const std::string &aWritePath, const std::string &velocConfig);
 
             /**
              * @brief Extracts of Modelling Engine Configuration
@@ -82,7 +82,7 @@ namespace stbx {
              * @return EngineConfiguration       EngineConfiguration instance
              */
             operations::configurations::RTMEngineConfigurations *
-            GenerateRTMConfiguration(const std::string &aWritePath);
+            GenerateRTMConfiguration(const std::string &aWritePath, const std::string &velocConfig);
 
             /**
              * @brief Extracts of Callbacks component from parsed map

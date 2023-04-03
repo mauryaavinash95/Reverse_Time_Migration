@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
     string configuration_file = WORKLOAD_PATH "/engine_configuration.json";
     string callback_file = WORKLOAD_PATH "/callback_configuration.json";
     string system_file = WORKLOAD_PATH "/system_configuration.json";
+    string veloc_config = WORKLOAD_PATH "/veloc_config.cfg";
     string write_path = WRITE_PATH;
 
     auto logger = LoggerSystem::GetInstance();
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
     parser->BuildMap();
 
     auto generator = new Generator(parser->GetMap());
-    auto engine = generator->GenerateEngine(write_path);
+    auto engine = generator->GenerateEngine(write_path, veloc_config);
 
     TimerManager::GetInstance()->Configure(generator->GenerateTimerConfiguration());
 

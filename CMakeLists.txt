@@ -159,9 +159,20 @@ endif ()
 find_package(CUDAToolkit REQUIRED)
 list(APPEND CMAKE_PREFIX_PATH "/home/am6429/nvcomp/")
 find_package(nvcomp REQUIRED 2.3)
-list(APPEND CMAKE_PREFIX_PATH "/home/am6429/cusz-build/")
+list(APPEND CMAKE_PREFIX_PATH "/home/am6429/cusz-install/")
 find_package(CUSZ REQUIRED)
 add_definitions(-w)
+
+# list(APPEND CMAKE_PREFIX_PATH "/home/am6429/research/veloc-build/lib64/")
+set (veloc-modules_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC")
+set (veloc-client_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC/")
+find_package(veloc-modules REQUIRED)
+find_package(veloc-client REQUIRED)
+include_directories("/home/am6429/research/veloc-build/include")
+# message(STATUS "VELOC Include dir ${VELOC_INCLUDE_DIRS}")
+# find_package(VELOC REQUIRED)
+find_package(MPI REQUIRED)
+
 # endif()
 
 ##############################################################################
@@ -203,10 +214,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src)
 ##############################################################################
 
 add_executable(Engine ${CMAKE_CURRENT_SOURCE_DIR}/main_migration.cpp)
-target_link_libraries(Engine SEISMIC-TOOLBOX SEISMIC-OPERATIONS nvcomp::nvcomp CUDA::cudart)
+target_link_libraries(Engine SEISMIC-TOOLBOX SEISMIC-OPERATIONS nvcomp::nvcomp CUDA::cudart veloc-modules veloc-client MPI::MPI_CXX)
 
 add_executable(Modeller ${CMAKE_CURRENT_SOURCE_DIR}/main_modelling.cpp)
-target_link_libraries(Modeller SEISMIC-TOOLBOX SEISMIC-OPERATIONS nvcomp::nvcomp CUDA::cudart)
+target_link_libraries(Modeller SEISMIC-TOOLBOX SEISMIC-OPERATIONS nvcomp::nvcomp CUDA::cudart veloc-modules veloc-client MPI::MPI_CXX)
 
 ##############################################################################
 # EXAMPLES
