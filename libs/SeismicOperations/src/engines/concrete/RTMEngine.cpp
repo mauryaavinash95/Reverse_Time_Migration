@@ -37,7 +37,7 @@ using namespace operations::engines;
 using namespace operations::common;
 using namespace operations::dataunits;
 using namespace operations::helpers::callbacks;
-
+#define NDEBUG
 
 void print_progress(double percentage, const char *str = nullptr) {
     int val = (int) (percentage * 100);
@@ -278,12 +278,13 @@ void
 RTMEngine::Forward(GridBox *apGridBox) {
     ScopeTimer t("Engine::Forward");
 
+
     auto logger = LoggerSystem::GetInstance();
     this->mpConfiguration->GetComputationKernel()->SetMode(
             components::KERNEL_MODE::FORWARD);
     int time_steps = this->mpConfiguration->GetSourceInjector()->GetPrePropagationNT();
     // Do prequel source injection before main forward propagation.
-    logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << " timesteps " << time_steps << '\n';
+    // logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << " timesteps " << time_steps << '\n';
     for (int it = -time_steps; it < 1; it++) {
         {
             ScopeTimer timer("SourceInjector::ApplySource");
@@ -294,11 +295,14 @@ RTMEngine::Forward(GridBox *apGridBox) {
             this->mpConfiguration->GetComputationKernel()->Step();
         }
 #ifndef NDEBUG
-        this->mpCallbacks->AfterForwardStep(apGridBox, it);
+        {
+            ScopeTimer t("Forward::AfterForwardStep");
+            this->mpCallbacks->AfterForwardStep(apGridBox, it);
+        }
 #endif
     }
     uint one_percent = apGridBox->GetNT() / 100 + 1;
-    logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
+    // logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
     for (int it = 1; it < apGridBox->GetNT(); it++) {
         {
             ScopeTimer timer("ForwardCollector::SaveForward");
@@ -313,10 +317,16 @@ RTMEngine::Forward(GridBox *apGridBox) {
             this->mpConfiguration->GetComputationKernel()->Step();
         }
 #ifndef NDEBUG
-        this->mpCallbacks->AfterForwardStep(apGridBox, it);
+        {
+            ScopeTimer t("Forward::AfterForwardStep");
+            this->mpCallbacks->AfterForwardStep(apGridBox, it);
+        }
 #endif
-        if ((it % one_percent) == 0) {
-            print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
+        {
+            ScopeTimer t("Forward::PrintProgress");
+            if ((it % one_percent) == 0) {
+                print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
+            }
         }
     }
     print_progress(1, "Forward Propagation");

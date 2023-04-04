@@ -78,6 +78,8 @@ namespace operations {
 
             void AcquireConfiguration() override;
 
+            cudaStream_t stream;
+
 
         private:
             common::ComputationParameters *mpParameters = nullptr;
@@ -135,7 +137,7 @@ namespace operations {
             // std::vector<uint64_t> h2f_times;
             // std::vector<uint64_t> data_sizes;
             uint64_t prev_ckpt_time = 0;
-            bool should_compress = 0;
+            bool should_compress = 1;
         };
     }//namespace components
 }//namespace operations

@@ -1,8 +1,8 @@
 {
   "computation-parameters": {
-    "stencil-order": 4,
+    "stencil-order": 8,
     "boundary-length": 20,
-    "source-frequency": 3,
+    "source-frequency": 4,
     "isotropic-radius": 5,
     "dt-relax": 0.7,
     "algorithm": "gpu",
