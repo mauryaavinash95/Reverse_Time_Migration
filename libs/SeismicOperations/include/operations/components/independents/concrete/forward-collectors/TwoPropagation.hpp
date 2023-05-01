@@ -57,7 +57,7 @@ namespace operations {
         class TwoPropagation : public ForwardCollector,
                                public dependency::HasDependents {
         public:
-            explicit TwoPropagation(bs::base::configurations::ConfigurationMap *apConfigurationMap, const std::string &velocClient);
+            explicit TwoPropagation(bs::base::configurations::ConfigurationMap *apConfigurationMap);
 
             ~TwoPropagation() override;
 
@@ -68,9 +68,9 @@ namespace operations {
             void SetDependentComponents(
                     operations::helpers::ComponentsMap<DependentComponent> *apDependentComponentsMap) override;
 
-            void FetchForward() override;
+            void FetchForward(std::string &ckpt_name) override;
 
-            void SaveForward() override;
+            void SaveForward(std::string &ckpt_name) override;
 
             void ResetGrid(bool aIsForwardRun) override;
 
@@ -80,6 +80,7 @@ namespace operations {
 
             cudaStream_t stream;
 
+            unsigned long long mMaxDeviceNT;
 
         private:
             common::ComputationParameters *mpParameters = nullptr;
@@ -105,8 +106,6 @@ namespace operations {
             uint mTimeCounter;
 
             unsigned long long mMaxNT;
-
-            unsigned long long mMaxDeviceNT;
 
             unsigned int mpMaxNTRatio;
 

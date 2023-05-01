@@ -104,7 +104,7 @@ Generator::GenerateParameters() {
 }
 
 RTMEngineConfigurations *
-Generator::GenerateRTMConfiguration(const string &aWritePath, const string &velocConfig) {
+Generator::GenerateRTMConfiguration(const string &aWritePath) {
     auto logger = LoggerSystem::GetInstance();
     auto configuration = new RTMEngineConfigurations();
 
@@ -127,7 +127,7 @@ Generator::GenerateRTMConfiguration(const string &aWritePath, const string &velo
         configuration->SetModelHandler(g->GenerateModelHandler());
         configuration->SetSourceInjector(g->GenerateSourceInjector());
         configuration->SetBoundaryManager(g->GenerateBoundaryManager());
-        configuration->SetForwardCollector(g->GenerateForwardCollector(aWritePath, velocConfig));
+        configuration->SetForwardCollector(g->GenerateForwardCollector(aWritePath));
         configuration->SetMigrationAccommodator(g->GenerateMigrationAccommodator());
         configuration->SetTraceManager(g->GenerateTraceManager());
     } else {
@@ -192,13 +192,13 @@ Generator::GenerateWriter() {
 }
 
 EngineConfigurations *
-Generator::GenerateEngineConfiguration(const string &aWritePath, const std::string &velocConfig) {
+Generator::GenerateEngineConfiguration(const string &aWritePath) {
     auto logger = LoggerSystem::GetInstance();
     auto algorithm = this->mMap[K_SYSTEM][K_ALGORITHM][OP_K_TYPE];
 
     EngineConfigurations *engine_configuration;
     if (algorithm == "rtm") {
-        engine_configuration = this->GenerateRTMConfiguration(aWritePath, velocConfig);
+        engine_configuration = this->GenerateRTMConfiguration(aWritePath);
     } else {
         logger->Error() << "Unsupported algorithm..."
                         << "Terminating...\n";
@@ -208,13 +208,13 @@ Generator::GenerateEngineConfiguration(const string &aWritePath, const std::stri
 }
 
 Engine *
-Generator::GenerateEngine(const string &aWritePath, const string &velocConfig) {
+Generator::GenerateEngine(const string &aWritePath) {
     auto logger = LoggerSystem::GetInstance();
     auto algorithm = this->mMap[K_SYSTEM][K_ALGORITHM][OP_K_TYPE];
 
     Engine *engine;
     if (algorithm == "rtm") {
-        engine = new RTMEngine(this->GenerateRTMConfiguration(aWritePath, velocConfig),
+        engine = new RTMEngine(this->GenerateRTMConfiguration(aWritePath),
                                this->GenerateParameters(),
                                this->GenerateCallbacks(aWritePath));
         logger->Info() << "RTM engine generated successfully...\n";

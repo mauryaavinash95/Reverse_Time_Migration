@@ -57,7 +57,7 @@ namespace stbx {
             /**
              * @brief Preform all tasks need by the engine before migration.
              */
-            void BeforeMigration() override;
+            void BeforeMigration(std::string &ckpt_name) override;
 
             /**
              * @brief Preform all tasks need by the engine after migration.

@@ -49,7 +49,7 @@ namespace stbx {
             GenerateBoundaryManager();
 
             operations::components::ForwardCollector *
-            GenerateForwardCollector(const std::string &write_path, const std::string &velocConfig);
+            GenerateForwardCollector(const std::string &write_path);
 
             operations::components::MigrationAccommodator *
             GenerateMigrationAccommodator();

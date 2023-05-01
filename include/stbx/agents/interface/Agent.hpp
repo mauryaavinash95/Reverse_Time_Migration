@@ -22,6 +22,8 @@
 #define PIPELINE_AGENTS_AGENT_HPP
 
 #include <operations/engines/interface/Engine.hpp>
+#include <iostream>
+#include <chrono>
 
 namespace stbx {
     namespace agents {
@@ -83,7 +85,7 @@ namespace stbx {
             /**
              * @brief Preform all tasks need by the engine before migration.
              */
-            virtual void BeforeMigration() = 0;
+            virtual void BeforeMigration(std::string &velocConfig) = 0;
 
             /**
              * @brief Preform all tasks need by the engine after migration.
@@ -112,9 +114,9 @@ namespace stbx {
              * @brief Preform migration full cycle.
              * @return aMigrationData : MigrationData
              */
-            operations::dataunits::MigrationData *Execute() {
+            operations::dataunits::MigrationData *Execute(std::string &velocConfig) {
                 operations::dataunits::GridBox *gb = Initialize();
-                BeforeMigration();
+                BeforeMigration(velocConfig);
                 while (HasNextShot()) {
                     mpEngine->MigrateShots(GetNextShot(), gb);
                     AfterMigration();

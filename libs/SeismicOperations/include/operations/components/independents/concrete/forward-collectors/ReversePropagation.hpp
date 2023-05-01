@@ -48,9 +48,9 @@ namespace operations {
             void SetDependentComponents(
                     operations::helpers::ComponentsMap<DependentComponent> *apDependentComponentsMap) override;
 
-            void FetchForward() override;
+            void FetchForward(std::string &ckpt_name) override;
 
-            void SaveForward() override;
+            void SaveForward(std::string &ckpt_name) override;
 
             void ResetGrid(bool is_forward_run) override;
 

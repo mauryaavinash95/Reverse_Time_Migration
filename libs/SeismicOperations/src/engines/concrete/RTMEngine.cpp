@@ -166,13 +166,19 @@ RTMEngine::Initialize() {
 
 void
 RTMEngine::MigrateShots(vector<uint> shot_numbers, GridBox *apGridBox) {
+    auto logger = LoggerSystem::GetInstance();
     for (auto shot_number : shot_numbers) {
+        auto start = std::chrono::high_resolution_clock::now();
         this->MigrateShots(shot_number, apGridBox);
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto d = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
+        logger->Info() << "<" << shot_number << "-" << d << ">\n";
     }
 }
 
 void
 RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
+    ckpt_name = std::string("DPCPP_RTM")+std::to_string(shot_id);
     ScopeTimer t("Engine::MigrateShot");
 
     this->mpConfiguration->GetMigrationAccommodator()->ResetShotCorrelation();
@@ -252,6 +258,8 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
             apGridBox,
             this->mpConfiguration->GetMigrationAccommodator()->GetStackedShotCorrelation());
 #endif
+    bool print_stats = true;
+    VELOC_Cleanup(ckpt_name.c_str(), print_stats);
 }
 
 MigrationData *
@@ -284,7 +292,7 @@ RTMEngine::Forward(GridBox *apGridBox) {
             components::KERNEL_MODE::FORWARD);
     int time_steps = this->mpConfiguration->GetSourceInjector()->GetPrePropagationNT();
     // Do prequel source injection before main forward propagation.
-    // logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << " timesteps " << time_steps << '\n';
+    logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << " timesteps " << time_steps << '\n';
     for (int it = -time_steps; it < 1; it++) {
         {
             ScopeTimer timer("SourceInjector::ApplySource");
@@ -302,11 +310,11 @@ RTMEngine::Forward(GridBox *apGridBox) {
 #endif
     }
     uint one_percent = apGridBox->GetNT() / 100 + 1;
-    // logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
+    logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
     for (int it = 1; it < apGridBox->GetNT(); it++) {
         {
             ScopeTimer timer("ForwardCollector::SaveForward");
-            this->mpConfiguration->GetForwardCollector()->SaveForward();
+            this->mpConfiguration->GetForwardCollector()->SaveForward(ckpt_name);
         }
         {
             ScopeTimer timer("SourceInjector::ApplySource");
@@ -325,12 +333,13 @@ RTMEngine::Forward(GridBox *apGridBox) {
         {
             ScopeTimer t("Forward::PrintProgress");
             if ((it % one_percent) == 0) {
-                print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
+                // print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
             }
         }
     }
-    print_progress(1, "Forward Propagation");
-    logger->Info() << " ... Done" << '\n';
+    // print_progress(1, "Forward Propagation");
+    // VELOC_Prefetch_start();
+    // logger->Info() << " ... Done" << '\n';
 }
 
 void
@@ -352,7 +361,7 @@ RTMEngine::Backward(GridBox *apGridBox) {
         }
         {
             ScopeTimer timer("ForwardCollector::FetchForward");
-            this->mpConfiguration->GetForwardCollector()->FetchForward();
+            this->mpConfiguration->GetForwardCollector()->FetchForward(ckpt_name);
         }
 #ifndef NDEBUG
         this->mpCallbacks->AfterFetchStep(
@@ -365,9 +374,9 @@ RTMEngine::Backward(GridBox *apGridBox) {
                     this->mpConfiguration->GetForwardCollector()->GetForwardGrid());
         }
         if ((it % onePercent) == 0) {
-            print_progress(((float) (apGridBox->GetNT() - it)) / apGridBox->GetNT(), "Backward Propagation");
+            // print_progress(((float) (apGridBox->GetNT() - it)) / apGridBox->GetNT(), "Backward Propagation");
         }
     }
-    print_progress(1, "Backward Propagation");
-    logger->Info() << " ... Done" << '\n';
+    // print_progress(1, "Backward Propagation");
+    // logger->Info() << " ... Done" << '\n';
 }

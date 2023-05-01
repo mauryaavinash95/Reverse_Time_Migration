@@ -73,20 +73,20 @@ int main(int argc, char *argv[]) {
     parser->BuildMap();
 
     auto generator = new Generator(parser->GetMap());
-    auto engine = generator->GenerateEngine(write_path, veloc_config);
+    auto engine = generator->GenerateEngine(write_path);
 
     TimerManager::GetInstance()->Configure(generator->GenerateTimerConfiguration());
 
     auto agent = generator->GenerateAgent();
     agent->AssignEngine(engine);
     agent->AssignArgs(argc, argv);
-    auto md = agent->Execute();
+    auto md = agent->Execute(veloc_config);
 
     delete engine;
 
     auto writer = generator->GenerateWriter();
     writer->AssignMigrationData(md);
-    writer->Write(write_path);
+    // writer->Write(write_path);
 
     TimerManager::GetInstance()->Terminate(true);
     TimerManager::Kill();

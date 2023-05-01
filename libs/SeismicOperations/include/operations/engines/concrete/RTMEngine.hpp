@@ -22,6 +22,8 @@
 
 #include <operations/engines/interface/Engine.hpp>
 #include <operations/engine-configurations/concrete/RTMEngineConfigurations.hpp>
+#include "veloc.hpp"
+#include "veloc.h"
 
 namespace operations {
     namespace engines {
@@ -126,7 +128,7 @@ namespace operations {
              */
             void
             Backward(dataunits::GridBox *apGridBox);
-
+            std::string ckpt_name = "";
         private:
             /// The configuration containing the actual components to be used in the process.
             configurations::RTMEngineConfigurations *mpConfiguration;

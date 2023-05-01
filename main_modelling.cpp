@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
     string configuration_file = WORKLOAD_PATH "/modelling_configuration.json";
     string callback_file = WORKLOAD_PATH "/callback_configuration.json";
     string system_file = WORKLOAD_PATH "/system_configuration.json";
+    string veloc_config = WORKLOAD_PATH "/veloc_config.cfg";
     string write_path = WRITE_PATH;
 
     auto logger = LoggerSystem::GetInstance();
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
     auto agent = generator->GenerateAgent();
     agent->AssignEngine(engine);
     agent->AssignArgs(argc, argv);
-    agent->Execute();
+    agent->Execute(veloc_config);
 
     delete engine_configuration;
     delete cbs;

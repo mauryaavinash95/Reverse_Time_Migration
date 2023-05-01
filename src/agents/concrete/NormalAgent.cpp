@@ -18,7 +18,9 @@
  */
 
 #include <stbx/agents/concrete/NormalAgent.hpp>
-
+#include <iostream>
+#include "veloc.hpp"
+#include "veloc.h"
 using namespace std;
 using namespace stbx::agents;
 using namespace operations::dataunits;
@@ -30,11 +32,20 @@ GridBox *NormalAgent::Initialize() {
     return Agent::Initialize();
 }
 
-void NormalAgent::BeforeMigration() {}
+void NormalAgent::BeforeMigration(std::string &velocConfig) {
+    if (VELOC_Init_single(0, velocConfig.c_str()) != VELOC_SUCCESS) {
+        cout << "Error initializing VELOC! Aborting... " << endl;
+        exit(-1);
+    }
+}
 
-void NormalAgent::AfterMigration() {}
+void NormalAgent::AfterMigration() {
+    // std::cout << "Using normalagent aftermigration " << std::endl;
+}
 
-void NormalAgent::BeforeFinalize() {}
+void NormalAgent::BeforeFinalize() {
+    // std::cout << "Using normalagent " << std::endl;
+}
 
 MigrationData *NormalAgent::AfterFinalize(MigrationData *aMigrationData) {
     return aMigrationData;

@@ -61,7 +61,7 @@ void ReversePropagation::AcquireConfiguration() {
     this->mpComputationKernel->SetDependentComponents(this->GetDependentComponentsMap());
 }
 
-void ReversePropagation::FetchForward() {
+void ReversePropagation::FetchForward(std::string &ckpt_name) {
     this->mpComputationKernel->Step();
 
     if (this->mInjectionEnabled) {
@@ -126,7 +126,7 @@ void ReversePropagation::ResetGrid(bool is_forward_run) {
     }
 }
 
-void ReversePropagation::SaveForward() {
+void ReversePropagation::SaveForward(std::string &ckpt_name) {
     LoggerSystem *Logger = LoggerSystem::GetInstance();
     // Logger->Info() << "In reverseprop saveforward " << this->mInjectionEnabled << "\n";
     if (this->mInjectionEnabled) {

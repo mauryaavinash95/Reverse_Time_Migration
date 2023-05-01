@@ -53,14 +53,6 @@ TwoPropagation::TwoPropagation(bs::base::configurations::ConfigurationMap *apCon
     this->mZFP_Parallel = true;
     this->mZFP_IsRelative = false;
     this->mMaxNT = 0;
-    // this->veloc_client = veloc::get_client(MPI_COMM_NULL, std::string(velocConfig.c_str()));
-    // this->veloc_client = veloc::get_client(MPI_COMM_WORLD, velocConfig);
-    // MPI_Init(NULL, NULL);
-    if (VELOC_Init_single(0, velocConfig.c_str()) != VELOC_SUCCESS)
-    {
-        cout << "Error initializing VELOC! Aborting... " << endl;
-        exit(2);
-    }
     // #ifdef BUILD_FOR_NVIDIA
     // checkCuda(cudaStreamCreate(&stream));
     // #endif
@@ -79,18 +71,19 @@ TwoPropagation::~TwoPropagation() {
     int n = data_sizes.size();
     logfile << "D2H transfer intval, " << this->mMaxDeviceNT <<  "H2F trf intval, " << this->mMaxNT << "\n";
     logfile << "Ckpt No., Curr ckpt start, Prev ckpt end, Time diff, Datasize, NVComp time, Cmpr size, Cmpr ratio, Ckpt gen rate\n";
-    for(int i=1; i<n; i++) {
-        if(iter_counts[i]%this->mMaxDeviceNT != 0)
-            continue;
+    for(int i=0; i<n; i++) {
+        uint64_t prev_func_end_times = 0;
+        if (i>0)
+            prev_func_end_times = func_end_times[i-1];
         logfile << iter_counts[i] << ", "
             << func_start_times[i] << ", " 
             << func_end_times[i-1] << ", " 
-            << (func_start_times[i]-func_end_times[i-1]) << ", " 
+            << (func_start_times[i]-prev_func_end_times) << ", " 
             << data_sizes[i] << ", "
             << nvcomp_times[i] << ", " 
             << nvcomp_sizes[i] << ", " 
             << (double)data_sizes[i]/(double)nvcomp_sizes[i] << ", "
-            << (double)data_sizes[i]/(double)(func_start_times[i]-func_end_times[i-1]) << "\n";
+            << (double)data_sizes[i]/(double)(func_start_times[i]-prev_func_end_times) << "\n";
     }
 
     logfile.close();
@@ -138,57 +131,41 @@ void TwoPropagation::FetchForward() {
 
 
     uint const window_size = wnx * wny * wnz;
-    // // Retrieve data from files to host buffer
-    // if ((this->mTimeCounter + 1) % this->mMaxNT == 0) {
-    //     if (this->mIsCompression) { ;
-    //         string str = this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
-    //         {
-    //             ScopeTimer t("ForwardCollector::Decompression");
-    //             Compressor::Decompress(this->mpForwardPressureHostMemory, wnx, wny, wnz,
-    //                                    this->mMaxNT,
-    //                                    (double) this->mZFP_Tolerance,
-    //                                    this->mZFP_Parallel,
-    //                                    str.c_str(),
-    //                                    this->mZFP_IsRelative);
-    //         }
-    //     } else {
-    //         string str = this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
-    //         {
-    //             ScopeTimer t("IO::ReadForward");
-    //             bin_file_load(str.c_str(), this->mpForwardPressureHostMemory, this->mMaxNT * window_size);
-    //         }
-    //     }
-    // }
-    // // Retrieve data from host buffer
-    // if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {
-
-    //     int host_index = (this->mTimeCounter + 1) / this->mMaxDeviceNT - 1;
-
-    //     Device::MemCpy(this->mpForwardPressure->GetNativePointer(),
-    //                    this->mpForwardPressureHostMemory +
-    //                    (host_index % this->mpMaxNTRatio) * (this->mMaxDeviceNT * window_size),
-    //                    this->mMaxDeviceNT * window_size * sizeof(float),
-    //                    Device::COPY_HOST_TO_DEVICE);
-    // }
-
-    float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
-    // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
-    if ((this->mTimeCounter-1) == this->mpMainGridBox->GetNT()) {
-        {
-            ScopeTimer t("VELOC::protect::back");
-            VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
+    // Retrieve data from files to host buffer
+    if ((this->mTimeCounter + 1) % this->mMaxNT == 0) {
+        if (this->mIsCompression) {
+            string str = this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
+            {
+                ScopeTimer t("ForwardCollector::Decompression");
+                Compressor::Decompress(this->mpForwardPressureHostMemory, wnx, wny, wnz,
+                                       this->mMaxNT,
+                                       (double) this->mZFP_Tolerance,
+                                       this->mZFP_Parallel,
+                                       str.c_str(),
+                                       this->mZFP_IsRelative);
+            }
+        } else {
+            string str = this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
+            {
+                ScopeTimer t("IO::ReadForward");
+                bin_file_load(str.c_str(), this->mpForwardPressureHostMemory, this->mMaxNT * window_size);
+            }
         }
     }
-    // veloc_client->restart(std::string("DPCPP_RTM"), this->mTimeCounter);
-    {
-        ScopeTimer t("VELOC::res");
-        VELOC_Restart("DPCPP_RTM", this->mTimeCounter);
-    }
-    this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z, ptr);
+    // Retrieve data from host buffer
+    if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {
 
-    // this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z,
-    //                              this->mpForwardPressure->GetNativePointer() +
-    //                              ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size);
+        int host_index = (this->mTimeCounter + 1) / this->mMaxDeviceNT - 1;
+
+        Device::MemCpy(this->mpForwardPressure->GetNativePointer(),
+                       this->mpForwardPressureHostMemory +
+                       (host_index % this->mpMaxNTRatio) * (this->mMaxDeviceNT * window_size),
+                       this->mMaxDeviceNT * window_size * sizeof(float),
+                       Device::COPY_HOST_TO_DEVICE);
+    }
+    this->mpInternalGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z,
+                                 this->mpForwardPressure->GetNativePointer() +
+                                 ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size);
     this->mTimeCounter--;
 }
 
@@ -225,7 +202,7 @@ void TwoPropagation::ResetGrid(bool aIsForwardRun) {
             this->mMaxNT = this->mpMainGridBox->GetNT() + 1;
 
 
-            this->mMaxDeviceNT = 10; // save 100 frames in the Device memory, then reflect to host memory
+            this->mMaxDeviceNT = 50; // save 100 frames in the Device memory, then reflect to host memory
 
             this->mpForwardPressureHostMemory = (float *) mem_allocate(
                     (sizeof(float)), this->mMaxNT * window_size, "forward_pressure");
@@ -327,105 +304,102 @@ void TwoPropagation::SaveForward() {
     uint const window_size = wnx * wny * wnz;
 
     this->mTimeCounter++;
-    float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
-    // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
-    if (this->mTimeCounter <= 1) {
-        {
-            ScopeTimer t("VELOC::protect::fwd");
-            VELOC_Mem_protect(0, ptr, window_size, sizeof(float), should_compress, DEFAULT);
-        }
-    }
-    // veloc_client->checkpoint(std::string("DPCPP_RTM"), this->mTimeCounter);
-    {
-        ScopeTimer t("VELOC::ckpt");
-        VELOC_Checkpoint("DPCPP_RTM", this->mTimeCounter);
-    }
+
     // Transfer from Device memory to host memory
-    // LoggerSystem *Logger = LoggerSystem::GetInstance();
+    LoggerSystem *Logger = LoggerSystem::GetInstance();
     
-    // size_t data_size = this->mMaxDeviceNT * window_size * sizeof(float);
+    size_t data_size = this->mMaxDeviceNT * window_size * sizeof(float);
+    size_t cmpr_size = 0;
     // Logger->Info() << "Datasize " << data_size << " wnx " << wnx << " wny " << wny << " wnz " << wnz << " float " << sizeof(float) << "\n";
     // Logger->Info() << "Current time in ns " << std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() 
         // << " data size " << data_size << " GPU ckpt timesteps: " << this->mMaxDeviceNT << " Host ckpt timesteps: " <<  this->mMaxNT << "\n"; 
-    // uint64_t d2h_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    uint64_t d2h_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     // uint64_t nvcomp_start = 0, nvcomp_end = 0, cusz_start = 0 , cusz_end = 0, cmpr_size = 0;
-    // if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {     
-    //     // Logger->Info() << "Checkpointing at: " << this->mTimeCounter+1 << "\n";  
-    //     int host_index = (this->mTimeCounter + 1) / this->mMaxDeviceNT - 1;
-    //     uint8_t *uncompressed_data = (uint8_t *)this->mpForwardPressure->GetNativePointer();
-    //     uint8_t* comp_buffer;
-    //     // #ifdef BUILD_FOR_NVIDIA
-    //     {
-    //         ScopeTimer t("NVCOMP::Compress::Total");
-    //         checkCuda(cudaStreamCreate(&stream));
-    //         const int chunk_size = 1 << 16;
-    //         // LZ4Manager nvcomp_manager{chunk_size, NVCOMP_TYPE_CHAR, stream};
-    //         BitcompManager nvcomp_manager{NVCOMP_TYPE_CHAR, 1, stream};
-    //         CompressionConfig comp_config = nvcomp_manager.configure_compression(data_size);
-    //         checkCuda(cudaMalloc(&comp_buffer, comp_config.max_compressed_buffer_size));
-    //         checkCuda(cudaStreamSynchronize(stream));
-    //         {
-    //             ScopeTimer t("NVCOMP::Compress");
-    //             nvcomp_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //             nvcomp_manager.compress(uncompressed_data, comp_buffer, comp_config);
-    //             checkCuda(cudaStreamSynchronize(stream));
-    //             nvcomp_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //         }
-    //         cmpr_size = nvcomp_manager.get_compressed_output_size(comp_buffer);
-    //         checkCuda(cudaFree(comp_buffer));
-    //         checkCuda(cudaStreamSynchronize(stream));
-    //         checkCuda(cudaStreamDestroy(stream));
-    //     }
-    //     // #endif
+    cudaEvent_t nvcomp_start, nvcomp_end;
+    checkCuda(cudaStreamCreate(&stream));
+    checkCuda(cudaEventCreate(&nvcomp_start));
+    checkCuda(cudaEventCreate(&nvcomp_end));
+    checkCuda(cudaEventRecord(nvcomp_start, stream));
+    checkCuda(cudaEventRecord(nvcomp_end, stream));
+    if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {     
+        // Logger->Info() << "Checkpointing at: " << this->mTimeCounter+1 << "\n";  
+        int host_index = (this->mTimeCounter + 1) / this->mMaxDeviceNT - 1;
+        uint8_t *uncompressed_data = (uint8_t *)this->mpForwardPressure->GetNativePointer();
+        uint8_t* comp_buffer;
         
-    //     // nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //     {
-    //     ScopeTimer t("ForwardCollector::DeviceToHost");
-    //     Device::MemCpy(
-    //             this->mpForwardPressureHostMemory +
-    //             (host_index % this->mpMaxNTRatio) * (this->mMaxDeviceNT * window_size),
-    //             this->mpForwardPressure->GetNativePointer(),
-    //             this->mMaxDeviceNT * window_size * sizeof(float),
-    //             Device::COPY_DEVICE_TO_HOST);
-    //     }
-    //     // checkCuda(cudaDeviceSynchronize());
-    //     // uint64_t curr_time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //     // Logger->Info() << "In save forward function from GPU at time " << curr_time << " time counter " << this->mTimeCounter 
-    //     //     << " maxdeviceNT " << this->mMaxDeviceNT << " transfer time (ns) " 
-    //     //     << curr_time-nanoseconds_since_epoch << " data size " << data_size << '\n';
-    //     prev_ckpt_time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    // }
-    // uint64_t d2h_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        // #ifdef BUILD_FOR_NVIDIA
+        {
+            ScopeTimer t("NVCOMP::Compress::Total");
+            int bitcomp_algo = 0;
+            int device_id = 0;
+            BitcompManager nvcomp_manager{NVCOMP_TYPE_CHAR, bitcomp_algo, stream, device_id};
+            CompressionConfig comp_config = nvcomp_manager.configure_compression(data_size);
+            checkCuda(cudaMalloc(&comp_buffer, comp_config.max_compressed_buffer_size));
+            checkCuda(cudaStreamSynchronize(stream));
+            {
+                ScopeTimer t("NVCOMP::Compress");
+                // nvcomp_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                checkCuda(cudaEventRecord(nvcomp_start, stream));
+                nvcomp_manager.compress(uncompressed_data, comp_buffer, comp_config);
+                checkCuda(cudaEventRecord(nvcomp_end, stream));
+                checkCuda(cudaStreamSynchronize(stream));
+                // nvcomp_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            }
+            cmpr_size = nvcomp_manager.get_compressed_output_size(comp_buffer);
+            checkCuda(cudaFree(comp_buffer));
+            checkCuda(cudaStreamSynchronize(stream));
+            // checkCuda(cudaStreamDestroy(stream));
+        }
+        // #endif
+        
+        // nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        {
+        ScopeTimer t("ForwardCollector::DeviceToHost");
+        Device::MemCpy(
+                this->mpForwardPressureHostMemory +
+                (host_index % this->mpMaxNTRatio) * (this->mMaxDeviceNT * window_size),
+                this->mpForwardPressure->GetNativePointer(),
+                this->mMaxDeviceNT * window_size * sizeof(float),
+                Device::COPY_DEVICE_TO_HOST);
+        }
+        // checkCuda(cudaDeviceSynchronize());
+        // uint64_t curr_time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        // Logger->Info() << "In save forward function from GPU at time " << curr_time << " time counter " << this->mTimeCounter 
+        //     << " maxdeviceNT " << this->mMaxDeviceNT << " transfer time (ns) " 
+        //     << curr_time-nanoseconds_since_epoch << " data size " << data_size << '\n';
+        prev_ckpt_time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+    uint64_t d2h_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-    // // Save host memory to file
-    // uint64_t h2f_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    // // Logger->Info() << "In save forward function from host " << this->mTimeCounter << " maxdeviceNT " << this->mMaxNT << " compr " << this->mIsCompression << '\n';
-    // if ((this->mTimeCounter + 1) % this->mMaxNT == 0) {
-    //     // if (false) { // Always write uncompressed data to file
-    //     if (this->mIsCompression) {
-    //         string str = this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
-    //         {
-    //             ScopeTimer t("ForwardCollector::Compression");;
-    //             Compressor::Compress(this->mpForwardPressureHostMemory, wnx, wny, wnz,
-    //                                  this->mMaxNT,
-    //                                  (double) this->mZFP_Tolerance,
-    //                                  this->mZFP_Parallel,
-    //                                  str.c_str(),
-    //                                  this->mZFP_IsRelative);
-    //         }
-    //     } else {
-    //         string str =
-    //                 this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
-    //         Logger->Info() << "Saving file at " << this->mWritePath << "\n";
-    //         {
-    //             ScopeTimer t("IO::WriteForward");
-    //             bin_file_save(str.c_str(), this->mpForwardPressureHostMemory, this->mMaxNT * window_size);
-    //         }
-    //     }
-    // }
-    // uint64_t h2f_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    // Save host memory to file
+    uint64_t h2f_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    // Logger->Info() << "In save forward function from host " << this->mTimeCounter << " maxdeviceNT " << this->mMaxNT << " compr " << this->mIsCompression << '\n';
+    if ((this->mTimeCounter + 1) % this->mMaxNT == 0) {
+        // if (false) { // Always write uncompressed data to file
+        if (this->mIsCompression) {
+            string str = this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
+            {
+                ScopeTimer t("ForwardCollector::Compression");;
+                Compressor::Compress(this->mpForwardPressureHostMemory, wnx, wny, wnz,
+                                     this->mMaxNT,
+                                     (double) this->mZFP_Tolerance,
+                                     this->mZFP_Parallel,
+                                     str.c_str(),
+                                     this->mZFP_IsRelative);
+            }
+        } else {
+            string str =
+                    this->mWritePath + "/temp_" + to_string(this->mTimeCounter / this->mMaxNT);
+            Logger->Info() << "Saving file at " << this->mWritePath << "\n";
+            {
+                ScopeTimer t("IO::WriteForward");
+                bin_file_save(str.c_str(), this->mpForwardPressureHostMemory, this->mMaxNT * window_size);
+            }
+        }
+    }
+    uint64_t h2f_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-    // uint64_t d2d_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    uint64_t d2d_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     this->mpMainGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z,
                              this->mpForwardPressure->GetNativePointer() +
                              ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size);
@@ -437,30 +411,30 @@ void TwoPropagation::SaveForward() {
                                  this->mpForwardPressure->GetNativePointer() +
                                  ((this->mTimeCounter - 1) % this->mMaxDeviceNT) * window_size);
     }
+    uint64_t d2d_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-    if ((this->mTimeCounter-1) == this->mpMainGridBox->GetNT()) {
-        VELOC_Mem_unprotect(0);
+    uint64_t func_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+    float nvcomp_ms = 0;
+    checkCuda(cudaEventSynchronize(nvcomp_end));
+    checkCuda(cudaEventElapsedTime(&nvcomp_ms, nvcomp_start, nvcomp_end));
+    uint64_t nvcomp_time = nvcomp_ms*1e6;
+    if ( ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) || ((this->mTimeCounter + 1) % this->mMaxNT == 0) ) {  
+        // Logger->Info() << "Ckpt: " << this->mTimeCounter+1 
+        //     << " Fstart: " << func_start 
+        //     << " Fend: " << func_end
+        //     << " D2D: " << d2d_end-d2d_start 
+        //     << " D2H: " << d2h_end-d2h_start
+        //     << " H2F: " << h2f_end-h2f_start
+        //     << " Func: " << func_end-func_start << "\n";
+        iter_counts.push_back(this->mTimeCounter+1);
+        func_start_times.push_back(func_start);
+        func_end_times.push_back(func_end);
+        // nvcomp_times.push_back(nvcomp_end-nvcomp_start);
+        nvcomp_times.push_back(nvcomp_time);
+        nvcomp_sizes.push_back(cmpr_size);
+        data_sizes.push_back(data_size);
     }
-
-    // uint64_t d2d_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-
-    // uint64_t func_end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-
-    // // if ( ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) || ((this->mTimeCounter + 1) % this->mMaxNT == 0) ) {  
-    //     // Logger->Info() << "Ckpt: " << this->mTimeCounter+1 
-    //     //     << " Fstart: " << func_start 
-    //     //     << " Fend: " << func_end
-    //     //     << " D2D: " << d2d_end-d2d_start 
-    //     //     << " D2H: " << d2h_end-d2h_start
-    //     //     << " H2F: " << h2f_end-h2f_start
-    //     //     << " Func: " << func_end-func_start << "\n";
-    //     iter_counts.push_back(this->mTimeCounter+1);
-    //     func_start_times.push_back(func_start);
-    //     func_end_times.push_back(func_end);
-    //     nvcomp_times.push_back(nvcomp_end-nvcomp_start);
-    //     nvcomp_sizes.push_back(cmpr_size);
-    //     data_sizes.push_back(data_size);
-    // // }
 }
 
 void TwoPropagation::SetComputationParameters(ComputationParameters *apParameters) {

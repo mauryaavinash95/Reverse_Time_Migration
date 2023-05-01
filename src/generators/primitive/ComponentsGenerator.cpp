@@ -151,7 +151,7 @@ ComponentsGenerator::GenerateBoundaryManager() {
 }
 
 ForwardCollector *
-ComponentsGenerator::GenerateForwardCollector(const string &write_path, const string &velocConfig) {
+ComponentsGenerator::GenerateForwardCollector(const string &write_path) {
     auto logger = LoggerSystem::GetInstance();
     if (this->mMap[K_FORWARD_COLLECTOR].empty()) {
         logger->Error() << "No entry for forward-collector key : supported values "
@@ -169,7 +169,7 @@ ComponentsGenerator::GenerateForwardCollector(const string &write_path, const st
     logger->Info() << "In generate forward Collector..." << type << "\n";
     if (type == "two") {
         logger->Info() << "Generating Two Propagation Forward Collector...\n";
-        forward_collector = new TwoPropagation(map, velocConfig);
+        forward_collector = new TwoPropagation(map);
     } else if (type == "three") {
         logger->Info() << "Generating Three Propagation Forward Collector...\n";
         forward_collector = new ReversePropagation(map);

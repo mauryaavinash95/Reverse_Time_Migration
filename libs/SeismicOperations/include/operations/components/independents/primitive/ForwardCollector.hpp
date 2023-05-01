@@ -82,7 +82,7 @@ namespace operations {
              * to make ForwardGrid current frame point to the frame corresponding to time
              * nt - 2.
              */
-            virtual void FetchForward() = 0;
+            virtual void FetchForward(std::string &ckpt_name) = 0;
 
             /**
              * @brief This function is called on each time step in the forward propagation
@@ -92,7 +92,7 @@ namespace operations {
              * time 1. update pointers to save it in the right place in case of 2
              * propagation it will save in memory
              */
-            virtual void SaveForward() = 0;
+            virtual void SaveForward(std::string &ckpt_name) = 0;
 
             /**
              * @brief Resets the grid pressures or allocates new frames for the backward

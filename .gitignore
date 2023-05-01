@@ -675,3 +675,6 @@ simple-sycl-ap*
 *.qdrep
 *.sqlite
 *.csv
+*.nvvp
+*.log
+*.txt
