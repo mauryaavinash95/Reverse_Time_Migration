@@ -1,16 +1,10 @@
 {
   "traces": {
-    "min": 1,
-    "max": 100,
+    "min": 601,
+    "max": 602,
     "sort-type": "CSR",
     "paths": [
-        "data/iso/shots/shots0001_0200.segy",
-        "data/iso/shots/shots0201_0400.segy",
-        "data/iso/shots/shots0401_0600.segy",
-        "data/iso/shots/shots0601_0800.segy",
-        "data/iso/shots/shots0801_1000.segy",
-        "data/iso/shots/shots1001_1200.segy",
-        "data/iso/shots/shots1201_1348.segy"
+        "data/iso/shots/shots0601_0800.segy"
     ]
   },
   "models": {
@@ -46,7 +40,7 @@
     "trace-manager": {
       "properties": {
         "type": "segy",
-        "shot-stride": 20,
+        "shot-stride": 1,
         "interpolation": "none"
       }
     },

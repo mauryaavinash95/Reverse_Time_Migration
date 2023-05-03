@@ -162,11 +162,19 @@ find_package(nvcomp REQUIRED 2.3)
 add_definitions(-w)
 
 # list(APPEND CMAKE_PREFIX_PATH "/home/am6429/research/veloc-build/lib64/")
-set (veloc-modules_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC")
-set (veloc-client_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC/")
+
+# For ThetaGPU
+set (veloc-modules_DIR "/home/am6429/veloc-build/lib64/cmake/VELOC")
+set (veloc-client_DIR "/home/am6429/veloc-build/lib64/cmake/VELOC/")
+include_directories("/home/am6429/veloc-build/include")
+
+# For GOL-RIT
+# set (veloc-modules_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC")
+# set (veloc-client_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC/")
+# include_directories("/home/am6429/research/veloc-build/include")
+
 find_package(veloc-modules REQUIRED)
 find_package(veloc-client REQUIRED)
-include_directories("/home/am6429/research/veloc-build/include")
 # message(STATUS "VELOC Include dir ${VELOC_INCLUDE_DIRS}")
 # find_package(VELOC REQUIRED)
 find_package(MPI REQUIRED)

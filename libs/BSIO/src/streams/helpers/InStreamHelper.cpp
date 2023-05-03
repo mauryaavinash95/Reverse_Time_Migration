@@ -28,7 +28,7 @@
 #include <bs/io/lookups/mappers/HeaderMapper.hpp>
 #include <bs/io/lookups/mappers/SegyHeaderMapper.hpp>
 #include <bs/io/data-units/helpers/TraceHelper.hpp>
-
+#include <iostream>
 using namespace bs::io::streams::helpers;
 using namespace bs::io::dataunits;
 using namespace bs::io::dataunits::helpers;
@@ -46,6 +46,7 @@ size_t
 InStreamHelper::Open() {
     this->mInStream.open(this->mFilePath.c_str(), std::ifstream::in);
     if (this->mInStream.fail()) {
+	    std::cout << "Not found " << this->mFilePath << std::endl;
         throw bs::base::exceptions::FILE_NOT_FOUND_EXCEPTION();
     }
     return this->GetFileSize();

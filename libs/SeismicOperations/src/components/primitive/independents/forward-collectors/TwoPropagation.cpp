@@ -192,7 +192,8 @@ void TwoPropagation::ResetGrid(bool aIsForwardRun) {
             // this->mMaxDeviceNT = 100; // save 100 frames in the Device memory, then reflect to host memory
             
             size_t single_ckpt = window_size*sizeof(float);
-            this->mMaxDeviceNT = (unsigned long long int)((1<<28)/(single_ckpt));
+            // this->mMaxDeviceNT = (unsigned long long int)((1UL<<24)/(single_ckpt));
+            this->mMaxDeviceNT = 3;
 
 
             this->mpForwardPressureHostMemory = (float *) mem_allocate(
@@ -303,7 +304,8 @@ void TwoPropagation::SaveForward(std::string &ckpt_name) {
         {
             ScopeTimer t("VELOC::protect::fwd");
             Logger->Info() <<"Total number of checkpoints: " << this->mpMainGridBox->GetNT() << " \n";
-            Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << " total: " << window_size*this->mMaxDeviceNT*sizeof(float) << "\n";
+            // Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << " total: " << window_size*this->mMaxDeviceNT*sizeof(float) << "\n";
+	    Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << ", block size: " << this->mMaxDeviceNT << ", total: " << (uint64_t)this->mpMainGridBox->GetNT()*(uint64_t)window_size*(uint64_t)sizeof(float) << "\n";
             VELOC_Mem_protect(0, this->mpForwardPressure->GetNativePointer(), window_size*this->mMaxDeviceNT, sizeof(float), should_compress);
         }
     }
