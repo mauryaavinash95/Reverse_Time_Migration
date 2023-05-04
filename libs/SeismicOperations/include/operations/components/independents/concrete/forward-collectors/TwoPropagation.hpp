@@ -40,6 +40,9 @@
 #include "nvcomp/nvcompManagerFactory.hpp"
 #include "veloc.hpp"
 #include "veloc.h"
+#include <deque>
+#include <queue>
+#include <stack>
 
 #define checkCuda(ans) { checkCudaFunc((ans), __FILE__, __LINE__); }
 inline void checkCudaFunc(cudaError_t code, const char *file, int line, bool abort=true) {
@@ -137,6 +140,7 @@ namespace operations {
             // std::vector<uint64_t> data_sizes;
             uint64_t prev_ckpt_time = 0;
             bool should_compress = 1;
+	    uint64_t ckpt_id = 0;
         };
     }//namespace components
 }//namespace operations

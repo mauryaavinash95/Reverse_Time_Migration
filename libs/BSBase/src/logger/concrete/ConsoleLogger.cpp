@@ -60,7 +60,7 @@ ConsoleLogger::Operate(std::string aStatement, Operation aOperation) {
 #ifdef USING_SPDLOG
             this->mpLogger->info(aStatement);
 #else
-            std::cout << left << setfill(' ') << setw(20) << "[info] " << aStatement << std::endl;
+            // std::cout << left << setfill(' ') << setw(20) << "[info] " << aStatement << std::endl;
 #endif
             break;
         case Operation::ERROR:

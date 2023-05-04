@@ -1,10 +1,10 @@
 {
   "computation-parameters": {
-    "stencil-order": 16,
-    "boundary-length": 20,
-    "source-frequency": 5,
-    "isotropic-radius": 5,
-    "dt-relax": 0.9,
+    "stencil-order": 4,
+    "boundary-length": 16,
+    "source-frequency": 11,
+    "isotropic-radius": 16,
+    "dt-relax": 0.7,
     "algorithm": "gpu",
     "device": "nvidia",
     "cache-blocking": {
