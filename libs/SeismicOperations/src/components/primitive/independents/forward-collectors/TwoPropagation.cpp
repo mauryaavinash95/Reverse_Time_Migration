@@ -302,24 +302,19 @@ void TwoPropagation::SaveForward(std::string &ckpt_name) {
     LoggerSystem *Logger = LoggerSystem::GetInstance();
     // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
     if (this->mTimeCounter <= 1) {
-        {
-            ScopeTimer t("VELOC::protect::fwd");
-            Logger->Info() <<"Total number of checkpoints: " << this->mpMainGridBox->GetNT() << " \n";
-            // Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << " total: " << window_size*this->mMaxDeviceNT*sizeof(float) << "\n";
-	    Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << ", block size: " << this->mMaxDeviceNT << ", total: " << (uint64_t)this->mpMainGridBox->GetNT()*(uint64_t)window_size*(uint64_t)sizeof(float) << "\n";
-            VELOC_Mem_protect(0, this->mpForwardPressure->GetNativePointer(), window_size*this->mMaxDeviceNT, sizeof(float), should_compress);
-	    ckpt_id = 0;
+        Logger->Info() <<"Total number of checkpoints: " << this->mpMainGridBox->GetNT() << " \n";
+        Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << ", block size: " << this->mMaxDeviceNT << ", total: " << (uint64_t)this->mpMainGridBox->GetNT()*(uint64_t)window_size*(uint64_t)sizeof(float) << "\n";
+        for(int i=(this->mpMainGridBox->GetNT()/this->mMaxDeviceNT)-1; i>=0; i--) {
+            VELOC_Prefetch_enqueue(ckpt_name.c_str(), i, 0);
         }
+        
+        VELOC_Mem_protect(0, this->mpForwardPressure->GetNativePointer(), window_size*this->mMaxDeviceNT, sizeof(float), should_compress);
+        ckpt_id = 0;
     }
     
     if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {
-        {
-            ScopeTimer t("VELOC::ckpt");
-            // Logger->Info() << "Saving checkpoint: " << this->mTimeCounter + 1<< "\n";
-            // VELOC_Checkpoint(ckpt_name.c_str(), this->mTimeCounter+1);
-            VELOC_Checkpoint(ckpt_name.c_str(), ckpt_id);
+        VELOC_Checkpoint(ckpt_name.c_str(), ckpt_id);
 	    ckpt_id++;
-        }
     }
     
     this->mpMainGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z,
@@ -332,21 +327,15 @@ void TwoPropagation::SaveForward(std::string &ckpt_name) {
         this->mpMainGridBox->Set(WAVE | GB_PRSS | PREV | DIR_Z,
                                  this->mpForwardPressure->GetNativePointer() +
                                  ((this->mTimeCounter - 1) % this->mMaxDeviceNT) * window_size);
+    }
 
     if (this->mTimeCounter+1 == this->mpMainGridBox->GetNT()) {
-        /*
-	unsigned long long int deviceNT = this->mMaxDeviceNT;
-        for (int i=this->mpMainGridBox->GetNT(); i>0; i-=deviceNT) {
-            // Logger->Info() << "Prefetch enqueue: " << i << "\n";
-            VELOC_Prefetch_enqueue(ckpt_name.c_str(), i, 0);
-        }
-	*/
-	for(int i=ckpt_id-1; i>=0; i--) {
-		VELOC_Prefetch_enqueue(ckpt_name.c_str(), i, 0);
-	}
+        // for(int i=ckpt_id-1; i>=0; i--) {
+        //     VELOC_Prefetch_enqueue(ckpt_name.c_str(), i, 0);
+        // }
         VELOC_Prefetch_start();
     }
-    }
+
 }
 
 void TwoPropagation::SetComputationParameters(ComputationParameters *apParameters) {

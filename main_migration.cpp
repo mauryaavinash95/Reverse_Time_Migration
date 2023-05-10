@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     auto writer = generator->GenerateWriter();
     writer->AssignMigrationData(md);
-    // writer->Write(write_path);
+    writer->Write(write_path);
 
     TimerManager::GetInstance()->Terminate(true);
     TimerManager::Kill();
