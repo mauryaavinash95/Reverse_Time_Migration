@@ -234,10 +234,14 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
         this->mpConfiguration->GetBoundaryManager()->AdjustModelForBackward();
     }
 
+// Do only forward pass
+/*
+
 #ifndef NDEBUG
     this->mpCallbacks->BeforeBackwardPropagation(apGridBox);
 #endif
 
+    
     this->Backward(apGridBox);
 
 #ifndef NDEBUG
@@ -258,6 +262,8 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
             apGridBox,
             this->mpConfiguration->GetMigrationAccommodator()->GetStackedShotCorrelation());
 #endif
+*/
+    // VELOC_Checkpoint_wait();
     bool print_stats = true;
     VELOC_Cleanup(ckpt_name.c_str(), print_stats);
 }
@@ -333,11 +339,11 @@ RTMEngine::Forward(GridBox *apGridBox) {
         {
             ScopeTimer t("Forward::PrintProgress");
             if ((it % one_percent) == 0) {
-                // print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
+                print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
             }
         }
     }
-    // print_progress(1, "Forward Propagation");
+    print_progress(1, "Forward Propagation");
     // VELOC_Prefetch_start();
     // logger->Info() << " ... Done" << '\n';
 }
@@ -374,9 +380,9 @@ RTMEngine::Backward(GridBox *apGridBox) {
                     this->mpConfiguration->GetForwardCollector()->GetForwardGrid());
         }
         if ((it % onePercent) == 0) {
-            // print_progress(((float) (apGridBox->GetNT() - it)) / apGridBox->GetNT(), "Backward Propagation");
+            print_progress(((float) (apGridBox->GetNT() - it)) / apGridBox->GetNT(), "Backward Propagation");
         }
     }
-    // print_progress(1, "Backward Propagation");
+    print_progress(1, "Backward Propagation");
     // logger->Info() << " ... Done" << '\n';
 }
