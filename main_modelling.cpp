@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
     delete cp;
     delete engine;
 
-    auto writer = generator->GenerateWriter();
-    writer->WriteTimeResults(write_path);
+    // auto writer = generator->GenerateWriter();
+    // writer->WriteTimeResults(write_path);
 
     TimerManager::GetInstance()->Terminate(true);
     TimerManager::Kill();

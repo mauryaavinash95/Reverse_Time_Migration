@@ -166,13 +166,19 @@ RTMEngine::Initialize() {
 
 void
 RTMEngine::MigrateShots(vector<uint> shot_numbers, GridBox *apGridBox) {
-    auto logger = LoggerSystem::GetInstance();
+    uint wnx = apGridBox->GetWindowAxis()->GetXAxis().GetActualAxisSize();
+    uint wny = apGridBox->GetWindowAxis()->GetYAxis().GetActualAxisSize();
+    uint wnz = apGridBox->GetWindowAxis()->GetZAxis().GetActualAxisSize();
+    uint const window_size = wnx * wny * wnz*sizeof(float);
+
+    // auto logger = LoggerSystem::GetInstance();
     for (auto shot_number : shot_numbers) {
+        std::cout << shot_number << ", " << apGridBox->GetNT() << ", " << window_size << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
         this->MigrateShots(shot_number, apGridBox);
         auto stop = std::chrono::high_resolution_clock::now();
         auto d = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
-        logger->Info() << "<" << shot_number << "-" << d << ">\n";
+        // logger->Info() << "<" << shot_number << "-" << d << ">\n";
     }
 }
 
@@ -206,7 +212,6 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
 
     this->mpConfiguration->GetSourceInjector()->SetSourcePoint(
             this->mpConfiguration->GetTraceManager()->GetSourcePoint());
-
     {
         ScopeTimer timer("ModelHandler::SetupWindow");
         this->mpConfiguration->GetModelHandler()->SetupWindow();
@@ -223,8 +228,9 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
 #ifndef NDEBUG
     this->mpCallbacks->BeforeForwardPropagation(apGridBox);
 #endif
-
     this->Forward(apGridBox);
+// Do only forward pass
+/*
     {
         ScopeTimer timer("ForwardCollector::ResetGrid(Backward)");
         this->mpConfiguration->GetForwardCollector()->ResetGrid(false);
@@ -234,8 +240,7 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
         this->mpConfiguration->GetBoundaryManager()->AdjustModelForBackward();
     }
 
-// Do only forward pass
-/*
+
 
 #ifndef NDEBUG
     this->mpCallbacks->BeforeBackwardPropagation(apGridBox);
@@ -336,14 +341,14 @@ RTMEngine::Forward(GridBox *apGridBox) {
             this->mpCallbacks->AfterForwardStep(apGridBox, it);
         }
 #endif
-        {
-            ScopeTimer t("Forward::PrintProgress");
-            if ((it % one_percent) == 0) {
-                print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
-            }
-        }
+        // {
+        //     ScopeTimer t("Forward::PrintProgress");
+        //     if ((it % one_percent) == 0) {
+        //         print_progress(((float) it) / apGridBox->GetNT(), "Forward Propagation");
+        //     }
+        // }
     }
-    print_progress(1, "Forward Propagation");
+    // print_progress(1, "Forward Propagation");
     // VELOC_Prefetch_start();
     // logger->Info() << " ... Done" << '\n';
 }
