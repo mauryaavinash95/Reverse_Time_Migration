@@ -34,7 +34,7 @@ GridBox *NormalAgent::Initialize() {
 
 void NormalAgent::BeforeMigration(std::string &velocConfig) {
     if (VELOC_Init_single(0, velocConfig.c_str()) != VELOC_SUCCESS) {
-        cout << "Error initializing VELOC! Aborting... " << endl;
+        std::cout << "Error initializing VELOC! Aborting... " << std::endl;
         exit(-1);
     }
 }

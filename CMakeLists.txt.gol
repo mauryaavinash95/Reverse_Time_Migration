@@ -164,19 +164,21 @@ add_definitions(-w)
 # list(APPEND CMAKE_PREFIX_PATH "/home/am6429/research/veloc-build/lib64/")
 
 # For ThetaGPU
-set (veloc-modules_DIR "/home/am6429/veloc-build/lib64/cmake/VELOC")
-set (veloc-client_DIR "/home/am6429/veloc-build/lib64/cmake/VELOC/")
-include_directories("/home/am6429/veloc-build/include")
+# set (veloc-modules_DIR "/home/am6429/veloc-build/lib64/cmake/VELOC")
+# set (veloc-client_DIR "/home/am6429/veloc-build/lib64/cmake/VELOC/")
+# include_directories("/home/am6429/veloc-build/include")
 
 # For GOL-RIT
-# set (veloc-modules_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC")
-# set (veloc-client_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC/")
-# include_directories("/home/am6429/research/veloc-build/include")
+set (veloc-modules_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC")
+set (veloc-client_DIR "/home/am6429/research/veloc-build/lib64/cmake/VELOC/")
+include_directories("/home/am6429/research/veloc-build/include")
 
 find_package(veloc-modules REQUIRED)
 find_package(veloc-client REQUIRED)
 # message(STATUS "VELOC Include dir ${VELOC_INCLUDE_DIRS}")
 # find_package(VELOC REQUIRED)
+# list(APPEND CMAKE_PREFIX_PATH "/opt/openmpi-4/include")
+# include_directories("/opt/openmpi-4/include")
 find_package(MPI REQUIRED)
 
 # endif()

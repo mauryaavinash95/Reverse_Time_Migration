@@ -215,6 +215,7 @@ void operations::utils::io::ParseGatherToTraces(
     /* Set meta data. */
     apTraces->SampleDT = apGather->GetSamplingRate() / (float) 1e6;
     int sample_nt = apGather->GetTrace(0)->GetNumberOfSamples();
+    // sample_nt /= 40;
 
     int num_elements_per_time_step = apGather->GetNumberTraces();
     apTraces->TraceSizePerTimeStep = apGather->GetNumberTraces();
@@ -226,8 +227,11 @@ void operations::utils::io::ParseGatherToTraces(
     /// segy file , so we can modify the nt according to the
     /// ratio between the recorded dt and the suitable dt
     LoggerSystem *Logger = LoggerSystem::GetInstance(); 
-	Logger->Info() << "sample nt: " << sample_nt << " sample dt " << apTraces->SampleDT << " get dt " << apGridBox->GetDT()  << '\n';
-    apGridBox->SetNT(int(sample_nt * apTraces->SampleDT / apGridBox->GetDT()));
+	// Logger->Info() << "sample nt: " << sample_nt << " sample dt " << apTraces->SampleDT << " get dt " << apGridBox->GetDT()  << '\n';
+    // std::cout << "sample nt: " << sample_nt << " sample dt " << apTraces->SampleDT << " get dt " << apGridBox->GetDT()  << std::endl;
+    apGridBox->SetNT(std::min(int(sample_nt * apTraces->SampleDT / apGridBox->GetDT()), 200));
+    // apGridBox->SetNT(int(sample_nt/5));
+    // apGridBox->SetNT(10);
 
     *total_time = sample_nt * apTraces->SampleDT;
 

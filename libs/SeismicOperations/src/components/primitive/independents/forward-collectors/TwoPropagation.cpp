@@ -314,49 +314,47 @@ void TwoPropagation::ResetGrid(bool aIsForwardRun)
 
 void TwoPropagation::SaveForward(std::string &ckpt_name)
 {
-    uint64_t ts = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    LoggerSystem *Logger = LoggerSystem::GetInstance();
-
-    std::cout << ts - prev_ckpt_time << std::endl;
-    prev_ckpt_time = ts;
-    uint64_t func_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-
-    uint wnx = this->mpMainGridBox->GetWindowAxis()->GetXAxis().GetActualAxisSize();
-    uint wny = this->mpMainGridBox->GetWindowAxis()->GetYAxis().GetActualAxisSize();
-    uint wnz = this->mpMainGridBox->GetWindowAxis()->GetZAxis().GetActualAxisSize();
-
-    uint const window_size = wnx * wny * wnz;
+    // uint64_t ts = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    // std::cout << ts - prev_ckpt_time << std::endl;
+    // prev_ckpt_time = ts;
+    // uint64_t func_start = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();    
 
     this->mTimeCounter++;
-    float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
+    // float *ptr = this->mpForwardPressure->GetNativePointer() + ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size;
     // LoggerSystem *Logger = LoggerSystem::GetInstance();
     // veloc_client->mem_protect(0, ptr, window_size, sizeof(float), DEFAULT);
     if (this->mTimeCounter <= 1)
     {
-        {
-            ScopeTimer t("VELOC::protect::fwd");
-            Logger->Info() << "Total number of checkpoints: " << this->mpMainGridBox->GetNT() << " \n";
-            // Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << " total: " << window_size*this->mMaxDeviceNT*sizeof(float) << "\n";
-            Logger->Info() << "Size of memory region: " << window_size * sizeof(float) << ", block size: " << this->mMaxDeviceNT << ", total: " << (uint64_t)this->mpMainGridBox->GetNT() * (uint64_t)window_size * (uint64_t)sizeof(float) << "\n";
-            VELOC_Mem_protect(0, this->mpForwardPressure->GetNativePointer(), window_size, sizeof(float));
-            ckpt_id = 0;
-        }
+        uint wnx = this->mpMainGridBox->GetWindowAxis()->GetXAxis().GetActualAxisSize();
+        uint wny = this->mpMainGridBox->GetWindowAxis()->GetYAxis().GetActualAxisSize();
+        uint wnz = this->mpMainGridBox->GetWindowAxis()->GetZAxis().GetActualAxisSize();
+
+        uint const window_size = wnx * wny * wnz;
+        // LoggerSystem *Logger = LoggerSystem::GetInstance();
+        // Logger->Info() << "Total number of checkpoints: " << this->mpMainGridBox->GetNT() << " \n";
+        // Logger->Info() << "Size of memory region: " << window_size*sizeof(float) << " total: " << window_size*this->mMaxDeviceNT*sizeof(float) << "\n";
+        // Logger->Info() << "Size of memory region: " << window_size * sizeof(float) << ", block size: " << this->mMaxDeviceNT << ", total: " << (uint64_t)this->mpMainGridBox->GetNT() * (uint64_t)window_size * (uint64_t)sizeof(float) << "\n";
+        VELOC_Mem_protect(0, this->mpForwardPressure->GetNativePointer(), window_size*this->mMaxDeviceNT, sizeof(float));
+        ckpt_id = 0;
     }
 
-    VELOC_Checkpoint(ckpt_name.c_str(), ckpt_id);
-    ckpt_id++;
+    if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0) {
+        VELOC_Checkpoint(ckpt_name.c_str(), ckpt_id);
+        ckpt_id++;
+    }
 
     // if ((this->mTimeCounter + 1) % this->mMaxDeviceNT == 0)
     // {
-    //     {
-    //         ScopeTimer t("VELOC::ckpt");
+    //     // {
+    //     //     ScopeTimer t("VELOC::ckpt");
     //         // Logger->Info() << "Saving checkpoint: " << this->mTimeCounter + 1<< "\n";
     //         // VELOC_Checkpoint(ckpt_name.c_str(), this->mTimeCounter+1);
     //         VELOC_Checkpoint(ckpt_name.c_str(), ckpt_id);
     //         ckpt_id++;
-    //     }
+    //     // }
     // }
 
+    /*
     this->mpMainGridBox->Set(WAVE | GB_PRSS | CURR | DIR_Z,
                              this->mpForwardPressure->GetNativePointer() +
                                  ((this->mTimeCounter) % this->mMaxDeviceNT) * window_size);
@@ -384,7 +382,8 @@ void TwoPropagation::SaveForward(std::string &ckpt_name)
         //     }
         //     VELOC_Prefetch_start();
         // }
-    }
+    // }
+    
 }
 
 void TwoPropagation::SetComputationParameters(ComputationParameters *apParameters)

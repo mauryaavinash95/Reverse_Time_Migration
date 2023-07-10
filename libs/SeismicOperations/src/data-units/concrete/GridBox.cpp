@@ -289,6 +289,7 @@ void GridBox::Report(REPORT_LEVEL aReportLevel) {
         Logger->Info() << "\t" << ++index << ". "
                        << Beautify(Stringify(parameter.first)) << '\n';
     }
+    Logger->Info() << "Parameters parsed " << "\n";
 }
 
 bool GridBox::Has(u_int16_t key) {

@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <memory>
 #include <sstream>
+#include <cmath>
 
 #include <bs/base/common/assertions.h>
 

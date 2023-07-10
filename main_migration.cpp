@@ -84,9 +84,9 @@ int main(int argc, char *argv[]) {
 
     delete engine;
 
-    auto writer = generator->GenerateWriter();
-    writer->AssignMigrationData(md);
-    writer->Write(write_path);
+    // auto writer = generator->GenerateWriter();
+    // writer->AssignMigrationData(md);
+    // writer->Write(write_path);
 
     TimerManager::GetInstance()->Terminate(true);
     TimerManager::Kill();

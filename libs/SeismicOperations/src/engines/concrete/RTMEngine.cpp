@@ -171,20 +171,21 @@ RTMEngine::MigrateShots(vector<uint> shot_numbers, GridBox *apGridBox) {
     uint wnz = apGridBox->GetWindowAxis()->GetZAxis().GetActualAxisSize();
     uint const window_size = wnx * wny * wnz*sizeof(float);
 
-    // auto logger = LoggerSystem::GetInstance();
+    auto logger = LoggerSystem::GetInstance();
     for (auto shot_number : shot_numbers) {
-        std::cout << shot_number << ", " << apGridBox->GetNT() << ", " << window_size << std::endl;
+        // std::cout << shot_number << ", " << apGridBox->GetNT() << ", " << window_size << std::endl;
+        std::cout << "SHOT_ID, " << shot_number << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
         this->MigrateShots(shot_number, apGridBox);
         auto stop = std::chrono::high_resolution_clock::now();
         auto d = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
-        // logger->Info() << "<" << shot_number << "-" << d << ">\n";
+        std::cout << "TOTAL_TIME, " << d << std::endl << std::endl;
     }
 }
 
 void
 RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
-    ckpt_name = std::string("DPCPP_RTM")+std::to_string(shot_id);
+    ckpt_name = std::string("rtm")+std::to_string(shot_id);
     ScopeTimer t("Engine::MigrateShot");
 
     this->mpConfiguration->GetMigrationAccommodator()->ResetShotCorrelation();
@@ -203,6 +204,13 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
         ScopeTimer timer("TraceManager::PreprocessShot");
         this->mpConfiguration->GetTraceManager()->PreprocessShot();
     }
+
+    // uint wnx = apGridBox->GetWindowAxis()->GetXAxis().GetActualAxisSize();
+    // uint wny = apGridBox->GetWindowAxis()->GetYAxis().GetActualAxisSize();
+    // uint wnz = apGridBox->GetWindowAxis()->GetZAxis().GetActualAxisSize();
+    // uint const window_size = wnx * wny * wnz * sizeof(float);
+    // std::cout << "---> " << apGridBox->GetNT() << ", " << window_size << ", " << apGridBox->GetNT()*window_size << std::endl;
+// Comment remaining to find good config for DP compression approach
 
 
 #ifndef NDEBUG
@@ -228,7 +236,21 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
 #ifndef NDEBUG
     this->mpCallbacks->BeforeForwardPropagation(apGridBox);
 #endif
+
+    uint wnx = apGridBox->GetWindowAxis()->GetXAxis().GetActualAxisSize();
+    uint wny = apGridBox->GetWindowAxis()->GetYAxis().GetActualAxisSize();
+    uint wnz = apGridBox->GetWindowAxis()->GetZAxis().GetActualAxisSize();
+    uint const window_size = wnx * wny * wnz * sizeof(float);
+    // std::cout << "---> " << apGridBox->GetNT() << ", " << window_size << ", " << apGridBox->GetNT()*window_size << std::endl;
+
+
     this->Forward(apGridBox);
+    bool print_stats = true;
+    VELOC_Cleanup(ckpt_name.c_str(), print_stats);
+
+/*
+// Comment for DP compression search ends here.
+
 // Do only forward pass
 /*
     {
@@ -269,8 +291,8 @@ RTMEngine::MigrateShots(uint shot_id, GridBox *apGridBox) {
 #endif
 */
     // VELOC_Checkpoint_wait();
-    bool print_stats = true;
-    VELOC_Cleanup(ckpt_name.c_str(), print_stats);
+    // bool print_stats = true;
+    // VELOC_Cleanup(ckpt_name.c_str(), print_stats);
 }
 
 MigrationData *
@@ -322,7 +344,7 @@ RTMEngine::Forward(GridBox *apGridBox) {
     }
     uint one_percent = apGridBox->GetNT() / 100 + 1;
     logger->Info() << " ... apGridBox->GetNT() is " << apGridBox->GetNT() << '\n';
-    for (int it = 1; it < apGridBox->GetNT(); it++) {
+    for (int it = 1; it < apGridBox->GetNT(); it+=1) {
         {
             ScopeTimer timer("ForwardCollector::SaveForward");
             this->mpConfiguration->GetForwardCollector()->SaveForward(ckpt_name);

@@ -1,25 +1,24 @@
 {
-  "computation-parameters": {
-    "stencil-order": 8,
-    "boundary-length": 16,
-    "source-frequency": 2,
-    "isotropic-radius": 16,
-    "dt-relax": 0.9,
-    "algorithm": "gpu",
-    "device": "nvidia",
-    "cache-blocking": {
-      "block-x": 64,
-      "block-z": 16,
-      "block-y": 1
-    },
-    "window": {
-      "enable": false,
-      "left": 1300,
-      "right": 600,
-      "depth": 0,
-      "front": 0,
-      "back": 0
+    "computation-parameters": {
+        "stencil-order": 16,
+        "boundary-length": 10,
+        "source-frequency": 8,
+        "isotropic-radius": 10,
+        "dt-relax": 0.6,
+        "algorithm": "gpu",
+        "device": "nvidia",
+        "cache-blocking": {
+            "block-x": 128,
+            "block-z": 32,
+            "block-y": 1
+        },
+        "window": {
+            "enable": false,
+            "left": 1300,
+            "right": 600,
+            "depth": 0,
+            "front": 0,
+            "back": 0
+        }
     }
-  }
 }
-
